@@ -19,7 +19,7 @@ import {
   agentStateLabel,
 } from './agentStatus'
 import { captureEngine, captureSnapshot, subscribeCapture } from './captureEngine'
-import { buildSketchSrcdoc } from './sketchSrcdoc'
+import { buildSketchSrcdoc, buildStandaloneSketchHtml } from './sketchSrcdoc'
 import { visibleTranscriptRows } from './transcript'
 
 type Meeting = {
@@ -217,7 +217,19 @@ export default function WhisperMeeting() {
       const disposition = response.headers.get('Content-Disposition') ?? ''
       const filename = disposition.match(/filename="([^"]+)"/)?.[1]
         ?? `meeting.${format === 'text' ? 'txt' : format === 'markdown' ? 'md' : 'json'}`
-      const objectUrl = URL.createObjectURL(await response.blob())
+      let body = await response.blob()
+      if (format === 'sketch') {
+        const runtimeResponse = await fetch('/vendor/mermaid.min.js')
+        if (!runtimeResponse.ok) {
+          throw new Error(`Could not load the local Mermaid runtime (${runtimeResponse.status}).`)
+        }
+        const standalone = buildStandaloneSketchHtml(
+          await body.text(),
+          await runtimeResponse.text(),
+        )
+        body = new Blob([standalone], { type: 'text/html;charset=utf-8' })
+      }
+      const objectUrl = URL.createObjectURL(body)
       const link = document.createElement('a')
       link.href = objectUrl
       link.download = filename
@@ -569,7 +581,8 @@ export default function WhisperMeeting() {
                         srcDoc={buildSketchSrcdoc(
                           agents.data?.outputs[SKETCH_AGENT] ?? '<p>Sketch pending.</p>',
                         )}
-                        className="h-[30rem] w-full rounded-md border border-border bg-surface"
+                        className="w-full rounded-md border border-border bg-surface"
+                        style={{ height: 'clamp(36rem, 70vh, 52rem)' }}
                       />
                     </div>
                   )}
@@ -647,7 +660,20 @@ export default function WhisperMeeting() {
                   ))}
                 </div>
               ) : null}
-              <div className="mt-3 flex flex-col gap-2 md:flex-row">
+              <form
+                className="mt-3 flex flex-col gap-2 md:flex-row"
+                onSubmit={event => {
+                  event.preventDefault()
+                  const text = meetingContext.trim()
+                  if (
+                    detail.data?.meeting.state === 'recording'
+                    && text
+                    && !sendMeetingContext.isPending
+                  ) {
+                    sendMeetingContext.mutate(text)
+                  }
+                }}
+              >
                 <Input
                   value={meetingContext}
                   onChange={event => setMeetingContext(event.target.value)}
@@ -657,7 +683,7 @@ export default function WhisperMeeting() {
                   disabled={detail.data?.meeting.state !== 'recording'}
                 />
                 <Btn
-                  onClick={() => sendMeetingContext.mutate(meetingContext.trim())}
+                  type="submit"
                   disabled={
                     detail.data?.meeting.state !== 'recording'
                     || !meetingContext.trim()
@@ -666,7 +692,7 @@ export default function WhisperMeeting() {
                 >
                   {sendMeetingContext.isPending ? 'Sending…' : 'Send'}
                 </Btn>
-              </div>
+              </form>
               {detail.data?.meeting.state !== 'recording' ? (
                 <p className="mt-2 text-xs text-muted">
                   Meeting Chat is available while recording.

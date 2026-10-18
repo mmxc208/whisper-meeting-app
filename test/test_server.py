@@ -240,10 +240,8 @@ def test_meeting_context_is_durable_and_visible_to_both_agents(
     }
     assert agents_payload["outputs"][NOTE_AGENT].startswith("# Meeting notes")
     assert "Sketch pending" in agents_payload["outputs"][SKETCH_AGENT]
-    assert {row["agent_id"] for row in agents_payload["dispatch_counts"]} == {
-        NOTE_AGENT,
-        SKETCH_AGENT,
-    }
+    assert agents_payload["dispatch_counts"] == []
+    assert server.agent_coordinator is not None
     assert server.agent_coordinator.notifications == 1
 
 
@@ -276,6 +274,13 @@ def test_failed_agent_work_can_be_retried_through_signed_route(
             body=context_body,
             headers=_signed_headers("POST", context_target, context_body, request_id="5f" * 16),
         )
+        assert server.agent_ledger is not None
+        queued = server.agent_ledger.queue_update(
+            meeting_id=MEETING_ID,
+            owner_id="owner-a",
+            agent_id=NOTE_AGENT,
+        )
+        assert queued is not None
         dispatch = server.agent_ledger.claim_next(agent_id=NOTE_AGENT)
         assert dispatch is not None
         server.agent_ledger.fail(dispatch_id=dispatch["id"], error="provider unavailable")
@@ -289,6 +294,7 @@ def test_failed_agent_work_can_be_retried_through_signed_route(
 
     assert retry_status == 202
     assert retry_payload == {"retried": 1}
+    assert server.agent_coordinator is not None
     assert server.agent_coordinator.notifications == 2
 
 

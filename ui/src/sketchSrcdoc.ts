@@ -59,6 +59,19 @@ function csp(origin: string): string {
   ].join('; ')
 }
 
+function standaloneCsp(): string {
+  return [
+    "default-src 'none'",
+    "script-src 'unsafe-inline'",
+    "style-src 'unsafe-inline'",
+    "img-src data:",
+    "font-src data:",
+    "connect-src 'none'",
+    "form-action 'none'",
+    "base-uri 'none'",
+  ].join('; ')
+}
+
 function scrub(fragment: DocumentFragment): void {
   fragment.querySelectorAll(FORBIDDEN).forEach(node => node.remove())
   fragment.querySelectorAll('*').forEach(element => {
@@ -98,6 +111,47 @@ export function buildSketchSrcdoc(modelHtml: string, origin = window.location.or
   const runtime = output.createElement('script')
   runtime.src = `${origin}${MERMAID_PATH}`
   runtime.crossOrigin = 'anonymous'
+  output.head.appendChild(runtime)
+  output.body.appendChild(fragment)
+  const bootstrap = output.createElement('script')
+  bootstrap.textContent = BOOTSTRAP
+  output.body.appendChild(bootstrap)
+  return `<!doctype html>\n${output.documentElement.outerHTML}`
+}
+
+/** Build a downloaded sketch that keeps rendering after Kiro Crew is closed. */
+export function buildStandaloneSketchHtml(
+  modelHtml: string,
+  mermaidRuntime: string,
+): string {
+  if (/<\/script/i.test(mermaidRuntime)) {
+    throw new Error('The installed Mermaid runtime cannot be embedded safely.')
+  }
+
+  const parsed = new DOMParser().parseFromString(modelHtml, 'text/html')
+  const output = document.implementation.createHTMLDocument('Meeting sketch')
+  const fragment = output.createDocumentFragment()
+  for (const child of [...parsed.body.childNodes]) {
+    fragment.appendChild(output.importNode(child, true))
+  }
+  scrub(fragment)
+
+  const policy = output.createElement('meta')
+  policy.httpEquiv = 'Content-Security-Policy'
+  policy.content = standaloneCsp()
+  output.head.prepend(policy)
+  const charset = output.createElement('meta')
+  charset.setAttribute('charset', 'utf-8')
+  output.head.appendChild(charset)
+  const viewport = output.createElement('meta')
+  viewport.name = 'viewport'
+  viewport.content = 'width=device-width, initial-scale=1'
+  output.head.appendChild(viewport)
+  const style = output.createElement('style')
+  style.textContent = BASE_CSS
+  output.head.appendChild(style)
+  const runtime = output.createElement('script')
+  runtime.textContent = mermaidRuntime
   output.head.appendChild(runtime)
   output.body.appendChild(fragment)
   const bootstrap = output.createElement('script')

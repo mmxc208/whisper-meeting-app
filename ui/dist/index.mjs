@@ -1,12 +1,12 @@
 import { fmtDateTime as e, useAppApi as t } from "@kirocrew/app-sdk";
 import { useMutation as n, useQuery as r, useQueryClient as i } from "@tanstack/react-query";
-import { Btn as a, Card as o, CardTitle as s, EmptyState as c, ErrorNotice as l, Input as u, MarkdownRenderer as ee, PageHeader as d, StatCard as f } from "@kirocrew/app-sdk/ui";
-import { useEffect as p, useState as m, useSyncExternalStore as te } from "react";
-import { Fragment as h, jsx as g, jsxs as _ } from "react/jsx-runtime";
-function v(e) {
+import { Btn as a, Card as o, CardTitle as s, EmptyState as c, ErrorNotice as l, Input as u, MarkdownRenderer as ee, PageHeader as te, StatCard as d } from "@kirocrew/app-sdk/ui";
+import { useEffect as f, useState as p, useSyncExternalStore as ne } from "react";
+import { Fragment as m, jsx as h, jsxs as g } from "react/jsx-runtime";
+function re(e) {
 	return e.some((e) => !["complete", "failed"].includes(e.state));
 }
-function ne(e, t) {
+function ie(e, t) {
 	let n = e.agent_id === "whisper-meeting-note-taker" ? "notes" : "sketch";
 	switch (e.state) {
 		case "pending": return e.output_revision ? "Listening" : "Starting";
@@ -21,54 +21,54 @@ function ne(e, t) {
 }
 //#endregion
 //#region src/captureQueue.ts
-var y = 536870912, b = "whisper-meeting-capture-v1", x = 1, S = "chunks", C = "meta", w = "by-order", T = "byte-total", E = class extends Error {};
-function D(e) {
+var _ = 536870912, v = "whisper-meeting-capture-v1", y = 1, b = "chunks", x = "meta", S = "by-order", C = "byte-total", w = class extends Error {};
+function T(e) {
 	return new Promise((t, n) => {
 		e.onsuccess = () => t(e.result), e.onerror = () => n(e.error ?? /* @__PURE__ */ Error("IndexedDB request failed"));
 	});
 }
-function O(e) {
+function E(e) {
 	return new Promise((t, n) => {
 		e.oncomplete = () => t(), e.onabort = () => n(e.error ?? /* @__PURE__ */ Error("IndexedDB transaction aborted")), e.onerror = () => n(e.error ?? /* @__PURE__ */ Error("IndexedDB transaction failed"));
 	});
 }
-function k(e, t, n) {
+function D(e, t, n) {
 	return `${e}:${String(t).padStart(8, "0")}:${String(n).padStart(16, "0")}`;
 }
-var A = class {
+var O = class {
 	factory;
 	capBytes;
 	databasePromise;
-	constructor(e = indexedDB, t = y) {
+	constructor(e = indexedDB, t = _) {
 		this.factory = e, this.capBytes = t;
 	}
 	async put(e) {
-		let t = (await this.database()).transaction([S, C], "readwrite"), n = O(t), r = t.objectStore(S), i = t.objectStore(C), a = await D(r.get(e.key));
+		let t = (await this.database()).transaction([b, x], "readwrite"), n = E(t), r = t.objectStore(b), i = t.objectStore(x), a = await T(r.get(e.key));
 		if (a) {
 			if (a.sha256 !== e.sha256 || a.pcm.byteLength !== e.pcm.byteLength) throw t.abort(), await n.catch(() => void 0), Error("browser queue sequence conflict");
 			await n;
 			return;
 		}
-		let o = Number(await D(i.get(T)) ?? 0);
-		if (o + e.pcm.byteLength > this.capBytes) throw t.abort(), await n.catch(() => void 0), new E("browser audio queue limit reached");
-		r.put(e), i.put(o + e.pcm.byteLength, T), await n;
+		let o = Number(await T(i.get(C)) ?? 0);
+		if (o + e.pcm.byteLength > this.capBytes) throw t.abort(), await n.catch(() => void 0), new w("browser audio queue limit reached");
+		r.put(e), i.put(o + e.pcm.byteLength, C), await n;
 	}
 	async first() {
-		let e = (await this.database()).transaction(S, "readonly"), t = O(e), n = e.objectStore(S).index(w).openCursor(), r = await new Promise((e, t) => {
+		let e = (await this.database()).transaction(b, "readonly"), t = E(e), n = e.objectStore(b).index(S).openCursor(), r = await new Promise((e, t) => {
 			n.onsuccess = () => e(n.result?.value), n.onerror = () => t(n.error ?? /* @__PURE__ */ Error("IndexedDB cursor failed"));
 		});
 		return await t, r;
 	}
 	async deleteExact(e) {
-		let t = (await this.database()).transaction([S, C], "readwrite"), n = O(t), r = t.objectStore(S), i = t.objectStore(C), a = await D(r.get(e.key));
+		let t = (await this.database()).transaction([b, x], "readwrite"), n = E(t), r = t.objectStore(b), i = t.objectStore(x), a = await T(r.get(e.key));
 		if (a?.sha256 === e.sha256) {
-			let t = Number(await D(i.get(T)) ?? 0);
-			r.delete(e.key), i.put(Math.max(0, t - a.pcm.byteLength), T);
+			let t = Number(await T(i.get(C)) ?? 0);
+			r.delete(e.key), i.put(Math.max(0, t - a.pcm.byteLength), C);
 		}
 		await n;
 	}
 	async stats() {
-		let e = (await this.database()).transaction([S, C], "readonly"), t = O(e), n = await D(e.objectStore(S).count()), r = Number(await D(e.objectStore(C).get(T)) ?? 0);
+		let e = (await this.database()).transaction([b, x], "readonly"), t = E(e), n = await T(e.objectStore(b).count()), r = Number(await T(e.objectStore(x).get(C)) ?? 0);
 		return await t, {
 			chunks: n,
 			bytes: r
@@ -79,14 +79,14 @@ var A = class {
 	}
 	database() {
 		return this.databasePromise ||= new Promise((e, t) => {
-			let n = this.factory.open(b, x);
+			let n = this.factory.open(v, y);
 			n.onupgradeneeded = () => {
 				let e = n.result;
-				e.createObjectStore(S, { keyPath: "key" }).createIndex(w, "key", { unique: !0 }), e.createObjectStore(C);
+				e.createObjectStore(b, { keyPath: "key" }).createIndex(S, "key", { unique: !0 }), e.createObjectStore(x);
 			}, n.onsuccess = () => e(n.result), n.onerror = () => t(n.error ?? /* @__PURE__ */ Error("IndexedDB open failed"));
 		}), this.databasePromise;
 	}
-}, j = "/apps/whisper-meeting/api", M = class {
+}, k = "/apps/whisper-meeting/api", A = class {
 	api;
 	queue;
 	running = !1;
@@ -147,7 +147,7 @@ var A = class {
 		}
 	}
 	async upload(e) {
-		let t = `${j}/meetings/${encodeURIComponent(e.meetingId)}/audio/${e.epoch}/${e.sequence}`;
+		let t = `${k}/meetings/${encodeURIComponent(e.meetingId)}/audio/${e.epoch}/${e.sequence}`;
 		return (await this.api.request(t, {
 			method: "PUT",
 			body: e.pcm,
@@ -169,13 +169,13 @@ var A = class {
 		this.state = e;
 		for (let t of this.listeners) t(e);
 	}
-}, N = "/apps/whisper-meeting/api", P = "/apps/whisper-meeting/ui/dist/whisper-meeting-worklet.js";
-async function F(e) {
+}, j = "/apps/whisper-meeting/api", M = "/apps/whisper-meeting/ui/dist/whisper-meeting-worklet.js";
+async function N(e) {
 	let t = await crypto.subtle.digest("SHA-256", e);
 	return Array.from(new Uint8Array(t), (e) => e.toString(16).padStart(2, "0")).join("");
 }
-var I = new class {
-	queue = new A();
+var P = new class {
+	queue = new O();
 	listeners = /* @__PURE__ */ new Set();
 	state = {
 		phase: "idle",
@@ -230,8 +230,8 @@ var I = new class {
 				channelCount: 1,
 				echoCancellation: !1,
 				noiseSuppression: !1
-			} }), i = new AudioContext(), await i.audioWorklet.addModule(P);
-			let a = i.createMediaStreamSource(r), o = new AudioWorkletNode(i, "whisper-meeting-pcm"), s = await e.post(`${N}/meetings/${encodeURIComponent(t)}/${n ? "resume" : "start"}`, {});
+			} }), i = new AudioContext(), await i.audioWorklet.addModule(M);
+			let a = i.createMediaStreamSource(r), o = new AudioWorkletNode(i, "whisper-meeting-pcm"), s = await e.post(`${j}/meetings/${encodeURIComponent(t)}/${n ? "resume" : "start"}`, {});
 			this.stream = r, this.context = i, this.source = a, this.worklet = o, this.meetingId = t, this.epoch = s.capture.epoch, this.sequence = 0, this.sampleStart = 0, this.persistChain = Promise.resolve(), o.port.onmessage = (e) => this.onWorkletMessage(e), a.connect(o), this.publish({
 				...this.state,
 				phase: "recording",
@@ -261,7 +261,7 @@ var I = new class {
 			meetingId: t,
 			fatalError: void 0
 		}), await this.uploader?.drain(), (await this.queue.stats()).chunks !== 0) throw Error("queued audio has not drained");
-		let r = await e.get(`${N}/meetings/${encodeURIComponent(t)}`);
+		let r = await e.get(`${j}/meetings/${encodeURIComponent(t)}`);
 		if (!r.capture) throw Error("meeting has no capture epoch to drain");
 		await this.requestDrain(e, t, n, r.capture);
 	}
@@ -307,13 +307,13 @@ var I = new class {
 			phase: "transcribing",
 			meetingId: t,
 			epoch: r.epoch
-		}), (await e.post(`${N}/meetings/${encodeURIComponent(t)}/${n}`, r)).operation.state === "complete" && this.publish({
+		}), (await e.post(`${j}/meetings/${encodeURIComponent(t)}/${n}`, r)).operation.state === "complete" && this.publish({
 			...this.state,
 			phase: n === "pause" ? "paused" : "ended"
 		});
 	}
 	configureUploader(e) {
-		this.api = e, this.unsubscribeUploader?.(), this.uploader = new M(e, this.queue), this.unsubscribeUploader = this.uploader.subscribe((e) => this.onUploadState(e));
+		this.api = e, this.unsubscribeUploader?.(), this.uploader = new A(e, this.queue), this.unsubscribeUploader = this.uploader.subscribe((e) => this.onUploadState(e));
 	}
 	ensureUploader(e) {
 		(this.api !== e || !this.uploader) && this.configureUploader(e);
@@ -333,7 +333,7 @@ var I = new class {
 	async persist(e) {
 		if (!this.meetingId || this.epoch === void 0) throw Error("capture identity is missing");
 		let t = e.byteLength / 2, n = {
-			key: k(this.meetingId, this.epoch, this.sequence),
+			key: D(this.meetingId, this.epoch, this.sequence),
 			meetingId: this.meetingId,
 			epoch: this.epoch,
 			sequence: this.sequence,
@@ -343,7 +343,7 @@ var I = new class {
 			sampleRate: 16e3,
 			channels: 1,
 			encoding: "pcm_s16le",
-			sha256: await F(e),
+			sha256: await N(e),
 			pcm: e
 		};
 		await this.queue.put(n), this.sequence += 1, this.sampleStart += t, await this.refreshQueueStats(), this.uploader?.drain().catch(() => void 0);
@@ -373,7 +373,7 @@ var I = new class {
 		this.state = e;
 		for (let t of this.listeners) t(e);
 	}
-}(), re = (e) => I.subscribe(e), ie = () => I.snapshot(), L = "/vendor/mermaid.min.js", R = "script,iframe,frame,object,embed,applet,link,meta,base,form,input,button", z = /* @__PURE__ */ new Set([
+}(), F = (e) => P.subscribe(e), ae = () => P.snapshot(), I = "/vendor/mermaid.min.js", L = "script,iframe,frame,object,embed,applet,link,meta,base,form,input,button", R = /* @__PURE__ */ new Set([
 	"action",
 	"data",
 	"formaction",
@@ -382,11 +382,23 @@ var I = new class {
 	"src",
 	"srcset",
 	"xlink:href"
-]), B = /(?:@import|expression\s*\(|url\s*\(|javascript:)/i, V = "\n  html { color-scheme: light dark; }\n  body { margin: 0; padding: 16px; font: 14px system-ui; }\n  table { border-collapse: collapse; }\n  td, th { border: 1px solid #888; padding: 6px; }\n  pre { white-space: pre-wrap; }\n  .mermaid { display: flex; justify-content: center; }\n  .mermaid svg { max-width: 100%; height: auto; }\n", H = "(function(){\n  var m = window.mermaid;\n  if (!m) return;\n  function promote(){\n    var nodes = document.querySelectorAll('code.language-mermaid, code.mermaid, pre.mermaid > code');\n    for (var i = 0; i < nodes.length; i++){\n      var code = nodes[i];\n      var host = code.closest('pre') || code;\n      var div = document.createElement('div');\n      div.className = 'mermaid';\n      div.textContent = code.textContent || '';\n      if (host.parentNode) host.parentNode.replaceChild(div, host);\n    }\n  }\n  function start(){\n    try { promote(); } catch (e) {}\n    try { m.initialize({startOnLoad:false,securityLevel:'strict',suppressErrorRendering:true,theme:'default'}); } catch (e) {}\n    try { m.run({querySelector:'.mermaid',suppressErrors:true}); } catch (e) {}\n  }\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);\n  else start();\n})();";
-function U(e) {
+]), z = /(?:@import|expression\s*\(|url\s*\(|javascript:)/i, B = "\n  html { color-scheme: light dark; }\n  body { margin: 0; padding: 16px; font: 14px system-ui; }\n  table { border-collapse: collapse; }\n  td, th { border: 1px solid #888; padding: 6px; }\n  pre { white-space: pre-wrap; }\n  .mermaid { display: flex; justify-content: center; }\n  .mermaid svg { max-width: 100%; height: auto; }\n", V = "(function(){\n  var m = window.mermaid;\n  if (!m) return;\n  function promote(){\n    var nodes = document.querySelectorAll('code.language-mermaid, code.mermaid, pre.mermaid > code');\n    for (var i = 0; i < nodes.length; i++){\n      var code = nodes[i];\n      var host = code.closest('pre') || code;\n      var div = document.createElement('div');\n      div.className = 'mermaid';\n      div.textContent = code.textContent || '';\n      if (host.parentNode) host.parentNode.replaceChild(div, host);\n    }\n  }\n  function start(){\n    try { promote(); } catch (e) {}\n    try { m.initialize({startOnLoad:false,securityLevel:'strict',suppressErrorRendering:true,theme:'default'}); } catch (e) {}\n    try { m.run({querySelector:'.mermaid',suppressErrors:true}); } catch (e) {}\n  }\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);\n  else start();\n})();";
+function H(e) {
 	return [
 		"default-src 'none'",
-		`script-src 'unsafe-inline' ${`${e}${L}`}`,
+		`script-src 'unsafe-inline' ${`${e}${I}`}`,
+		"style-src 'unsafe-inline'",
+		"img-src data:",
+		"font-src data:",
+		"connect-src 'none'",
+		"form-action 'none'",
+		"base-uri 'none'"
+	].join("; ");
+}
+function U() {
+	return [
+		"default-src 'none'",
+		"script-src 'unsafe-inline'",
 		"style-src 'unsafe-inline'",
 		"img-src data:",
 		"font-src data:",
@@ -396,29 +408,47 @@ function U(e) {
 	].join("; ");
 }
 function W(e) {
-	e.querySelectorAll(R).forEach((e) => e.remove()), e.querySelectorAll("*").forEach((e) => {
+	e.querySelectorAll(L).forEach((e) => e.remove()), e.querySelectorAll("*").forEach((e) => {
 		for (let t of [...e.attributes]) {
 			let n = t.name.toLowerCase();
-			(n.startsWith("on") || z.has(n) || n === "style" && B.test(t.value)) && e.removeAttribute(t.name);
+			(n.startsWith("on") || R.has(n) || n === "style" && z.test(t.value)) && e.removeAttribute(t.name);
 		}
 	}), e.querySelectorAll("style").forEach((e) => {
-		B.test(e.textContent ?? "") && e.remove();
+		z.test(e.textContent ?? "") && e.remove();
 	});
 }
-function ae(e, t = window.location.origin) {
+function oe(e, t = window.location.origin) {
 	let n = new DOMParser().parseFromString(e, "text/html"), r = document.implementation.createHTMLDocument(""), i = r.createDocumentFragment();
 	for (let e of [...n.body.childNodes]) i.appendChild(r.importNode(e, !0));
 	W(i);
 	let a = r.createElement("meta");
-	a.httpEquiv = "Content-Security-Policy", a.content = U(t), r.head.prepend(a);
+	a.httpEquiv = "Content-Security-Policy", a.content = H(t), r.head.prepend(a);
 	let o = r.createElement("meta");
 	o.setAttribute("charset", "utf-8"), r.head.appendChild(o);
 	let s = r.createElement("style");
-	s.textContent = V, r.head.appendChild(s);
+	s.textContent = B, r.head.appendChild(s);
 	let c = r.createElement("script");
-	c.src = `${t}${L}`, c.crossOrigin = "anonymous", r.head.appendChild(c), r.body.appendChild(i);
+	c.src = `${t}${I}`, c.crossOrigin = "anonymous", r.head.appendChild(c), r.body.appendChild(i);
 	let l = r.createElement("script");
-	return l.textContent = H, r.body.appendChild(l), `<!doctype html>\n${r.documentElement.outerHTML}`;
+	return l.textContent = V, r.body.appendChild(l), `<!doctype html>\n${r.documentElement.outerHTML}`;
+}
+function se(e, t) {
+	if (/<\/script/i.test(t)) throw Error("The installed Mermaid runtime cannot be embedded safely.");
+	let n = new DOMParser().parseFromString(e, "text/html"), r = document.implementation.createHTMLDocument("Meeting sketch"), i = r.createDocumentFragment();
+	for (let e of [...n.body.childNodes]) i.appendChild(r.importNode(e, !0));
+	W(i);
+	let a = r.createElement("meta");
+	a.httpEquiv = "Content-Security-Policy", a.content = U(), r.head.prepend(a);
+	let o = r.createElement("meta");
+	o.setAttribute("charset", "utf-8"), r.head.appendChild(o);
+	let s = r.createElement("meta");
+	s.name = "viewport", s.content = "width=device-width, initial-scale=1", r.head.appendChild(s);
+	let c = r.createElement("style");
+	c.textContent = B, r.head.appendChild(c);
+	let l = r.createElement("script");
+	l.textContent = t, r.head.appendChild(l), r.body.appendChild(i);
+	let u = r.createElement("script");
+	return u.textContent = V, r.body.appendChild(u), `<!doctype html>\n${r.documentElement.outerHTML}`;
 }
 //#endregion
 //#region src/transcript.ts
@@ -431,7 +461,7 @@ function Z(e, t) {
 	let n = e.trimEnd(), r = t.trimStart();
 	return n ? r ? `${n}${J.test(n) && Y.test(r) ? "" : " "}${r}` : n : r;
 }
-function oe(e) {
+function ce(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) t.set(n.epoch, Math.max(t.get(n.epoch) ?? 0, n.audio_end_sample));
 	let n = /* @__PURE__ */ new Map(), r = 0;
@@ -470,196 +500,203 @@ function oe(e) {
 //#region src/App.tsx
 var Q = "/apps/whisper-meeting/api";
 function $() {
-	let y = t(), b = i(), [x, S] = m(""), [C, w] = m(), [T, E] = m(""), [D, O] = m(), [k, A] = m(), [j, M] = m("notes"), [N, P] = m(""), F = te(re, ie);
-	p(() => {
-		I.attach(y);
-	}, [y]), p(() => {
+	let _ = t(), v = i(), [y, b] = p(""), [x, S] = p(), [C, w] = p(""), [T, E] = p(), [D, O] = p(), [k, A] = p("notes"), [j, M] = p(""), N = ne(F, ae);
+	f(() => {
+		P.attach(_);
+	}, [_]), f(() => {
 		let e = (e) => {
-			(F.phase === "recording" || F.queuedChunks > 0) && e.preventDefault();
+			(N.phase === "recording" || N.queuedChunks > 0) && e.preventDefault();
 		};
 		return window.addEventListener("beforeunload", e), () => window.removeEventListener("beforeunload", e);
-	}, [F.phase, F.queuedChunks]);
-	let L = r({
+	}, [N.phase, N.queuedChunks]);
+	let I = r({
 		queryKey: ["meetings"],
-		queryFn: () => y.get(`${Q}/meetings`)
-	}), R = r({
+		queryFn: () => _.get(`${Q}/meetings`)
+	}), L = r({
 		queryKey: ["whisper-meeting-model"],
-		queryFn: () => y.get(`${Q}/model`),
+		queryFn: () => _.get(`${Q}/model`),
 		refetchInterval: (e) => e.state.data?.model.status === "installing" && 1e3
+	}), R = r({
+		queryKey: ["meeting", x],
+		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}`),
+		enabled: !!x
 	}), z = r({
-		queryKey: ["meeting", C],
-		queryFn: () => y.get(`${Q}/meetings/${encodeURIComponent(C ?? "")}`),
-		enabled: !!C
+		queryKey: ["meeting-transcript", x],
+		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}/transcript`),
+		enabled: !!x
 	}), B = r({
-		queryKey: ["meeting-transcript", C],
-		queryFn: () => y.get(`${Q}/meetings/${encodeURIComponent(C ?? "")}/transcript`),
-		enabled: !!C
-	}), V = r({
-		queryKey: ["meeting-agents", C],
-		queryFn: () => y.get(`${Q}/meetings/${encodeURIComponent(C ?? "")}/agents`),
-		enabled: !!C,
-		refetchInterval: (e) => v(e.state.data?.agents ?? []) ? 1e3 : !1
-	}), H = n({
-		mutationFn: () => y.post(`${Q}/model/install`, {}),
+		queryKey: ["meeting-agents", x],
+		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}/agents`),
+		enabled: !!x,
+		refetchInterval: (e) => re(e.state.data?.agents ?? []) ? 1e3 : !1
+	}), V = n({
+		mutationFn: () => _.post(`${Q}/model/install`, {}),
 		onSuccess: async () => {
-			await b.invalidateQueries({ queryKey: ["whisper-meeting-model"] });
+			await v.invalidateQueries({ queryKey: ["whisper-meeting-model"] });
+		}
+	}), H = n({
+		mutationFn: (e) => _.post(`${Q}/meetings`, { title: e }),
+		onSuccess: async () => {
+			b(""), await v.invalidateQueries({ queryKey: ["meetings"] });
 		}
 	}), U = n({
-		mutationFn: (e) => y.post(`${Q}/meetings`, { title: e }),
+		mutationFn: (e) => _.post(`${Q}/meetings/${encodeURIComponent(x ?? "")}/context`, { text: e }),
 		onSuccess: async () => {
-			S(""), await b.invalidateQueries({ queryKey: ["meetings"] });
-		}
-	}), W = n({
-		mutationFn: (e) => y.post(`${Q}/meetings/${encodeURIComponent(C ?? "")}/context`, { text: e }),
-		onSuccess: async () => {
-			P(""), await b.invalidateQueries({ queryKey: ["meeting-agents", C] });
+			M(""), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 		}
 	});
-	p(() => {
-		if (!C) return;
-		let e = new EventSource(`${Q}/meetings/${encodeURIComponent(C)}/events`);
+	f(() => {
+		if (!x) return;
+		let e = new EventSource(`${Q}/meetings/${encodeURIComponent(x)}/events`);
 		return e.onmessage = () => {
-			b.invalidateQueries({ queryKey: ["meetings"] }), b.invalidateQueries({ queryKey: ["meeting", C] }), b.invalidateQueries({ queryKey: ["meeting-transcript", C] }), b.invalidateQueries({ queryKey: ["meeting-agents", C] });
+			v.invalidateQueries({ queryKey: ["meetings"] }), v.invalidateQueries({ queryKey: ["meeting", x] }), v.invalidateQueries({ queryKey: ["meeting-transcript", x] }), v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 		}, () => e.close();
-	}, [b, C]), p(() => {
-		z.data && I.markServerState(z.data.meeting.id, z.data.meeting.state);
-	}, [z.data]);
-	async function G(e, t) {
-		w(e), E("");
+	}, [v, x]), f(() => {
+		R.data && P.markServerState(R.data.meeting.id, R.data.meeting.state);
+	}, [R.data]);
+	async function W(e, t) {
+		S(e), w("");
 		try {
 			await t(), await Promise.all([
-				b.invalidateQueries({ queryKey: ["meetings"] }),
-				b.invalidateQueries({ queryKey: ["meeting", e] }),
-				b.invalidateQueries({ queryKey: ["meeting-transcript", e] }),
-				b.invalidateQueries({ queryKey: ["meeting-agents", e] })
+				v.invalidateQueries({ queryKey: ["meetings"] }),
+				v.invalidateQueries({ queryKey: ["meeting", e] }),
+				v.invalidateQueries({ queryKey: ["meeting-transcript", e] }),
+				v.invalidateQueries({ queryKey: ["meeting-agents", e] })
 			]);
 		} catch (e) {
-			E(e instanceof Error ? e.message : String(e));
+			w(e instanceof Error ? e.message : String(e));
 		}
 	}
-	async function K(e, t) {
-		E("");
+	async function G(e, t) {
+		w("");
 		try {
-			let n = await y.raw(`${Q}/meetings/${encodeURIComponent(e)}/export?format=${t}`), r = (n.headers.get("Content-Disposition") ?? "").match(/filename="([^"]+)"/)?.[1] ?? `meeting.${t === "text" ? "txt" : t === "markdown" ? "md" : "json"}`, i = URL.createObjectURL(await n.blob()), a = document.createElement("a");
-			a.href = i, a.download = r, a.click(), URL.revokeObjectURL(i);
+			let n = await _.raw(`${Q}/meetings/${encodeURIComponent(e)}/export?format=${t}`), r = (n.headers.get("Content-Disposition") ?? "").match(/filename="([^"]+)"/)?.[1] ?? `meeting.${t === "text" ? "txt" : t === "markdown" ? "md" : "json"}`, i = await n.blob();
+			if (t === "sketch") {
+				let e = await fetch("/vendor/mermaid.min.js");
+				if (!e.ok) throw Error(`Could not load the local Mermaid runtime (${e.status}).`);
+				let t = se(await i.text(), await e.text());
+				i = new Blob([t], { type: "text/html;charset=utf-8" });
+			}
+			let a = URL.createObjectURL(i), o = document.createElement("a");
+			o.href = a, o.download = r, o.click(), URL.revokeObjectURL(a);
 		} catch (e) {
-			E(e instanceof Error ? e.message : String(e));
+			w(e instanceof Error ? e.message : String(e));
+		}
+	}
+	async function K(e) {
+		let t = e.title || "Untitled meeting";
+		if (window.confirm(`Permanently delete “${t}” and its local data?`)) {
+			w("");
+			try {
+				await _.del(`${Q}/meetings/${encodeURIComponent(e.id)}`), x === e.id && S(void 0), await v.invalidateQueries({ queryKey: ["meetings"] });
+			} catch (e) {
+				w(e instanceof Error ? e.message : String(e));
+			}
 		}
 	}
 	async function q(e) {
-		let t = e.title || "Untitled meeting";
-		if (window.confirm(`Permanently delete “${t}” and its local data?`)) {
-			E("");
+		if (x) {
+			w(""), E(e);
 			try {
-				await y.del(`${Q}/meetings/${encodeURIComponent(e.id)}`), C === e.id && w(void 0), await b.invalidateQueries({ queryKey: ["meetings"] });
+				await _.post(`${Q}/meetings/${encodeURIComponent(x)}/segments/${e}/retry`, {}), await Promise.all([v.invalidateQueries({ queryKey: ["meeting", x] }), v.invalidateQueries({ queryKey: ["meeting-transcript", x] })]);
 			} catch (e) {
-				E(e instanceof Error ? e.message : String(e));
+				w(e instanceof Error ? e.message : String(e));
+			} finally {
+				E(void 0);
 			}
 		}
 	}
 	async function J(e) {
-		if (C) {
-			E(""), O(e);
+		if (x) {
+			w(""), O(e);
 			try {
-				await y.post(`${Q}/meetings/${encodeURIComponent(C)}/segments/${e}/retry`, {}), await Promise.all([b.invalidateQueries({ queryKey: ["meeting", C] }), b.invalidateQueries({ queryKey: ["meeting-transcript", C] })]);
+				await _.post(`${Q}/meetings/${encodeURIComponent(x)}/agents/${encodeURIComponent(e)}/retry`, {}), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 			} catch (e) {
-				E(e instanceof Error ? e.message : String(e));
+				w(e instanceof Error ? e.message : String(e));
 			} finally {
 				O(void 0);
 			}
 		}
 	}
-	async function Y(e) {
-		if (C) {
-			E(""), A(e);
-			try {
-				await y.post(`${Q}/meetings/${encodeURIComponent(C)}/agents/${encodeURIComponent(e)}/retry`, {}), await b.invalidateQueries({ queryKey: ["meeting-agents", C] });
-			} catch (e) {
-				E(e instanceof Error ? e.message : String(e));
-			} finally {
-				A(void 0);
-			}
-		}
-	}
-	let X = L.data?.meetings ?? [], Z = X.find((e) => e.last_error), $ = L.error ?? R.error ?? U.error ?? H.error ?? z.error ?? B.error ?? V.error ?? W.error, se = $ instanceof Error ? $.message : String($ ?? "");
-	return /* @__PURE__ */ _(h, { children: [/* @__PURE__ */ g(d, {
+	let Y = I.data?.meetings ?? [], X = Y.find((e) => e.last_error), Z = I.error ?? L.error ?? H.error ?? V.error ?? R.error ?? z.error ?? B.error ?? U.error, $ = Z instanceof Error ? Z.message : String(Z ?? "");
+	return /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ h(te, {
 		title: "Whisper Meeting",
 		subtitle: "Durable, local-first meeting transcription"
-	}), /* @__PURE__ */ _("div", {
+	}), /* @__PURE__ */ g("div", {
 		className: "px-4 md:px-6 pb-8 overflow-y-auto flex-1 min-h-0",
 		children: [
-			/* @__PURE__ */ _("div", {
+			/* @__PURE__ */ g("div", {
 				className: "grid gap-3.5 grid-cols-[repeat(auto-fit,minmax(150px,1fr))] mb-6",
 				children: [
-					/* @__PURE__ */ g(f, {
+					/* @__PURE__ */ h(d, {
 						label: "Meetings",
-						value: String(X.length),
+						value: String(Y.length),
 						accent: !0
 					}),
-					/* @__PURE__ */ g(f, {
+					/* @__PURE__ */ h(d, {
 						label: "Storage",
 						value: "Local"
 					}),
-					/* @__PURE__ */ g(f, {
+					/* @__PURE__ */ h(d, {
 						label: "Whisper model",
-						value: R.data?.model.status ?? "Checking"
+						value: L.data?.model.status ?? "Checking"
 					}),
-					/* @__PURE__ */ g(f, {
+					/* @__PURE__ */ h(d, {
 						label: "Capture",
-						value: F.phase
+						value: N.phase
 					}),
-					/* @__PURE__ */ g(f, {
+					/* @__PURE__ */ h(d, {
 						label: "Upload queue",
-						value: String(F.queuedChunks)
+						value: String(N.queuedChunks)
 					})
 				]
 			}),
-			$ ? /* @__PURE__ */ g("div", {
+			Z ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
-				children: /* @__PURE__ */ g(l, {
+				children: /* @__PURE__ */ h(l, {
 					title: "Whisper Meeting could not load",
-					message: se
+					message: $
 				})
 			}) : null,
-			F.fatalError || F.uploadError ? /* @__PURE__ */ g("div", {
+			N.fatalError || N.uploadError ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
-				children: /* @__PURE__ */ g(l, {
-					title: F.fatalError ? "Capture stopped" : "Upload will retry",
-					message: F.fatalError ?? F.uploadError
+				children: /* @__PURE__ */ h(l, {
+					title: N.fatalError ? "Capture stopped" : "Upload will retry",
+					message: N.fatalError ?? N.uploadError
 				})
 			}) : null,
-			Z ? /* @__PURE__ */ g("div", {
+			X ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
-				children: /* @__PURE__ */ g(l, {
+				children: /* @__PURE__ */ h(l, {
 					title: "Recognition is waiting to recover",
-					message: `${Z.title || "Untitled meeting"}: ${Z.last_error}`
+					message: `${X.title || "Untitled meeting"}: ${X.last_error}`
 				})
 			}) : null,
-			T ? /* @__PURE__ */ g("div", {
+			C ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
-				children: /* @__PURE__ */ g(l, {
+				children: /* @__PURE__ */ h(l, {
 					title: "Meeting action failed",
-					message: T
+					message: C
 				})
 			}) : null,
-			F.phase === "recording" ? /* @__PURE__ */ _(o, {
+			N.phase === "recording" ? /* @__PURE__ */ g(o, {
 				className: "mb-4",
 				children: [
-					/* @__PURE__ */ g(s, { children: "Recording locally" }),
-					/* @__PURE__ */ g("p", {
+					/* @__PURE__ */ h(s, { children: "Recording locally" }),
+					/* @__PURE__ */ h("p", {
 						className: "text-sm text-muted mt-2",
 						children: "Audio is committed to IndexedDB before upload. Closing this page does not stop the module-level capture engine."
 					}),
-					/* @__PURE__ */ _("div", {
+					/* @__PURE__ */ g("div", {
 						className: "mt-3 flex gap-2",
-						children: [/* @__PURE__ */ g(a, {
+						children: [/* @__PURE__ */ h(a, {
 							onClick: () => {
-								F.meetingId && G(F.meetingId, () => I.pause(y));
+								N.meetingId && W(N.meetingId, () => P.pause(_));
 							},
 							children: "Pause"
-						}), /* @__PURE__ */ g(a, {
+						}), /* @__PURE__ */ h(a, {
 							onClick: () => {
-								F.meetingId && G(F.meetingId, () => I.end(y));
+								N.meetingId && W(N.meetingId, () => P.end(_));
 							},
 							children: "End"
 						})]
@@ -671,102 +708,102 @@ function $() {
 				"uploading",
 				"transcribing",
 				"recovering"
-			].includes(F.phase) ? /* @__PURE__ */ _(o, {
+			].includes(N.phase) ? /* @__PURE__ */ g(o, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ g(s, { children: "Finishing the durable cut" }), /* @__PURE__ */ g("p", {
+				children: [/* @__PURE__ */ h(s, { children: "Finishing the durable cut" }), /* @__PURE__ */ h("p", {
 					className: "text-sm text-muted mt-2",
-					children: F.phase === "transcribing" ? "All captured audio is durable. Waiting for final transcript coverage." : "Keeping the meeting open until every local chunk has a durable backend ACK."
+					children: N.phase === "transcribing" ? "All captured audio is durable. Waiting for final transcript coverage." : "Keeping the meeting open until every local chunk has a durable backend ACK."
 				})]
 			}) : null,
-			R.data?.model.status === "ready" ? null : /* @__PURE__ */ _(o, {
+			L.data?.model.status === "ready" ? null : /* @__PURE__ */ g(o, {
 				className: "mb-4",
 				children: [
-					/* @__PURE__ */ g(s, { children: "Local Whisper model" }),
-					/* @__PURE__ */ g("p", {
+					/* @__PURE__ */ h(s, { children: "Local Whisper model" }),
+					/* @__PURE__ */ h("p", {
 						className: "text-sm text-muted mt-2",
 						children: "Whisper Meeting keeps its own verified large-v3-turbo model so Kiro Crew updates cannot replace it."
 					}),
-					R.data?.model.error ? /* @__PURE__ */ g("p", {
+					L.data?.model.error ? /* @__PURE__ */ h("p", {
 						className: "text-sm text-danger mt-2",
-						children: R.data.model.error
+						children: L.data.model.error
 					}) : null,
-					/* @__PURE__ */ g("div", {
+					/* @__PURE__ */ h("div", {
 						className: "mt-3",
-						children: /* @__PURE__ */ g(a, {
-							onClick: () => H.mutate(),
-							disabled: R.data?.model.status === "installing" || H.isPending,
-							children: R.data?.model.status === "installing" ? "Installing and testing…" : "Install local model"
+						children: /* @__PURE__ */ h(a, {
+							onClick: () => V.mutate(),
+							disabled: L.data?.model.status === "installing" || V.isPending,
+							children: L.data?.model.status === "installing" ? "Installing and testing…" : "Install local model"
 						})
 					})
 				]
 			}),
-			/* @__PURE__ */ _(o, {
+			/* @__PURE__ */ g(o, {
 				className: "mb-4",
-				children: [/* @__PURE__ */ g(s, { children: "New meeting" }), /* @__PURE__ */ _("div", {
+				children: [/* @__PURE__ */ h(s, { children: "New meeting" }), /* @__PURE__ */ g("div", {
 					className: "flex flex-col md:flex-row gap-3 mt-3",
-					children: [/* @__PURE__ */ g(u, {
-						value: x,
-						onChange: (e) => S(e.target.value),
+					children: [/* @__PURE__ */ h(u, {
+						value: y,
+						onChange: (e) => b(e.target.value),
 						placeholder: "Optional meeting title",
 						"aria-label": "Meeting title",
 						maxLength: 200
-					}), /* @__PURE__ */ g(a, {
-						onClick: () => U.mutate(x),
-						disabled: U.isPending,
-						children: U.isPending ? "Creating…" : "Create meeting"
+					}), /* @__PURE__ */ h(a, {
+						onClick: () => H.mutate(y),
+						disabled: H.isPending,
+						children: H.isPending ? "Creating…" : "Create meeting"
 					})]
 				})]
 			}),
-			/* @__PURE__ */ _(o, { children: [/* @__PURE__ */ g(s, { children: "Meeting history" }), L.isPending ? /* @__PURE__ */ g("p", {
+			/* @__PURE__ */ g(o, { children: [/* @__PURE__ */ h(s, { children: "Meeting history" }), I.isPending ? /* @__PURE__ */ h("p", {
 				className: "text-sm text-muted mt-3",
 				children: "Loading meetings…"
-			}) : X.length === 0 ? /* @__PURE__ */ g(c, {
-				icon: /* @__PURE__ */ g("span", {
+			}) : Y.length === 0 ? /* @__PURE__ */ h(c, {
+				icon: /* @__PURE__ */ h("span", {
 					"aria-hidden": "true",
 					children: "🎙️"
 				}),
 				title: "No meetings yet",
 				subtitle: "Create a meeting to verify the durable app store."
-			}) : /* @__PURE__ */ g("div", {
+			}) : /* @__PURE__ */ h("div", {
 				className: "divide-y divide-border mt-3",
-				children: X.map((t) => /* @__PURE__ */ _("div", {
+				children: Y.map((t) => /* @__PURE__ */ g("div", {
 					className: "py-3 first:pt-0 last:pb-0",
-					children: [/* @__PURE__ */ _("div", {
+					children: [/* @__PURE__ */ g("div", {
 						className: "flex items-center justify-between gap-3",
-						children: [/* @__PURE__ */ g("div", {
+						children: [/* @__PURE__ */ h("div", {
 							className: "font-medium text-text",
 							children: t.title || "Untitled meeting"
-						}), /* @__PURE__ */ _("div", {
+						}), /* @__PURE__ */ g("div", {
 							className: "flex gap-2",
 							children: [
-								/* @__PURE__ */ g(a, {
-									onClick: () => w(t.id),
+								/* @__PURE__ */ h(a, {
+									onClick: () => S(t.id),
 									children: "View"
 								}),
-								t.state === "draft" && F.phase !== "recording" ? /* @__PURE__ */ g(a, {
-									onClick: () => void G(t.id, () => I.start(y, t.id)),
-									disabled: F.phase === "starting" || R.data?.model.status !== "ready",
+								t.state === "draft" && N.phase !== "recording" ? /* @__PURE__ */ h(a, {
+									onClick: () => void W(t.id, () => P.start(_, t.id)),
+									disabled: N.phase === "starting" || L.data?.model.status !== "ready",
 									children: "Record"
 								}) : null,
-								t.state === "paused" && F.phase !== "recording" ? /* @__PURE__ */ _(h, { children: [/* @__PURE__ */ g(a, {
-									onClick: () => void G(t.id, () => I.start(y, t.id, !0)),
-									disabled: F.phase === "starting" || R.data?.model.status !== "ready",
+								t.state === "paused" && N.phase !== "recording" ? /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ h(a, {
+									onClick: () => void W(t.id, () => P.start(_, t.id, !0)),
+									disabled: N.phase === "starting" || L.data?.model.status !== "ready",
 									children: "Resume"
-								}), /* @__PURE__ */ g(a, {
-									onClick: () => void G(t.id, () => I.recover(y, t.id, "end")),
+								}), /* @__PURE__ */ h(a, {
+									onClick: () => void W(t.id, () => P.recover(_, t.id, "end")),
 									children: "End"
 								})] }) : null,
-								t.state === "recording" && F.meetingId !== t.id ? /* @__PURE__ */ g(a, {
-									onClick: () => void G(t.id, () => I.recover(y, t.id, "pause")),
+								t.state === "recording" && N.meetingId !== t.id ? /* @__PURE__ */ h(a, {
+									onClick: () => void W(t.id, () => P.recover(_, t.id, "pause")),
 									children: "Recover & pause"
 								}) : null,
-								["recording", "draining"].includes(t.state) ? null : /* @__PURE__ */ g(a, {
-									onClick: () => void q(t),
+								["recording", "draining"].includes(t.state) ? null : /* @__PURE__ */ h(a, {
+									onClick: () => void K(t),
 									children: "Delete"
 								})
 							]
 						})]
-					}), /* @__PURE__ */ _("div", {
+					}), /* @__PURE__ */ g("div", {
 						className: "text-sm text-muted mt-1",
 						children: [
 							t.state,
@@ -776,43 +813,43 @@ function $() {
 					})]
 				}, t.id))
 			})] }),
-			C ? /* @__PURE__ */ _(o, {
+			x ? /* @__PURE__ */ g(o, {
 				className: "mt-4",
 				children: [
-					/* @__PURE__ */ _("div", {
+					/* @__PURE__ */ g("div", {
 						className: "flex flex-wrap items-start justify-between gap-3",
-						children: [/* @__PURE__ */ _("div", { children: [/* @__PURE__ */ g(s, { children: "Meeting workspace" }), z.data ? /* @__PURE__ */ _("p", {
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(s, { children: "Meeting workspace" }), R.data ? /* @__PURE__ */ g("p", {
 							className: "text-sm text-muted mt-2",
 							children: [
-								z.data.meeting.state,
+								R.data.meeting.state,
 								" · ",
-								z.data.progress.transcribed_chunks,
+								R.data.progress.transcribed_chunks,
 								"/",
-								z.data.progress.chunks,
+								R.data.progress.chunks,
 								" chunks covered",
-								` · ${z.data.progress.pending_chunks} awaiting recognition`,
-								z.data.operation ? ` · ${z.data.operation.kind} ${z.data.operation.state}` : ""
+								` · ${R.data.progress.pending_chunks} awaiting recognition`,
+								R.data.operation ? ` · ${R.data.operation.kind} ${R.data.operation.state}` : ""
 							]
-						}) : null] }), /* @__PURE__ */ g("div", {
+						}) : null] }), /* @__PURE__ */ h("div", {
 							className: "flex flex-wrap gap-2 text-xs text-muted",
-							children: (V.data?.agents ?? []).map((e) => /* @__PURE__ */ _("span", {
+							children: (B.data?.agents ?? []).map((e) => /* @__PURE__ */ g("span", {
 								className: "rounded-full border border-border px-2 py-1",
 								children: [
 									e.agent_id === "whisper-meeting-note-taker" ? "Note Taker" : "Sketch Artist",
 									":",
 									" ",
-									ne(e, z.data?.meeting.state),
+									ie(e, R.data?.meeting.state),
 									(() => {
-										let t = (V.data?.dispatch_counts ?? []).filter((t) => t.agent_id === e.agent_id && t.state === "pending").reduce((e, t) => e + t.count, 0);
+										let t = (B.data?.dispatch_counts ?? []).filter((t) => t.agent_id === e.agent_id && t.state === "pending").reduce((e, t) => e + t.count, 0);
 										return t ? ` · ${t} queued` : "";
 									})()
 								]
 							}, e.agent_id))
 						})]
 					}),
-					(V.data?.agents ?? []).filter((e) => e.state === "failed").map((e) => /* @__PURE__ */ _("div", {
+					(B.data?.agents ?? []).filter((e) => e.state === "failed").map((e) => /* @__PURE__ */ g("div", {
 						className: "mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-danger/40 px-3 py-2",
-						children: [/* @__PURE__ */ _("p", {
+						children: [/* @__PURE__ */ g("p", {
 							className: "text-sm text-danger",
 							children: [
 								e.agent_id === "whisper-meeting-note-taker" ? "Note Taker" : "Sketch Artist",
@@ -821,93 +858,94 @@ function $() {
 								" ",
 								"Transcription is unaffected."
 							]
-						}), /* @__PURE__ */ g(a, {
-							onClick: () => void Y(e.agent_id),
-							disabled: k !== void 0,
-							children: k === e.agent_id ? "Retrying…" : "Retry agent"
+						}), /* @__PURE__ */ h(a, {
+							onClick: () => void J(e.agent_id),
+							disabled: D !== void 0,
+							children: D === e.agent_id ? "Retrying…" : "Retry agent"
 						})]
 					}, `${e.agent_id}-failure`)),
-					z.data?.meeting.last_error ? /* @__PURE__ */ _("p", {
+					R.data?.meeting.last_error ? /* @__PURE__ */ g("p", {
 						className: "text-sm text-danger mt-2",
-						children: ["Recognition will retry without deleting audio: ", z.data.meeting.last_error]
+						children: ["Recognition will retry without deleting audio: ", R.data.meeting.last_error]
 					}) : null,
-					/* @__PURE__ */ _("div", {
+					/* @__PURE__ */ g("div", {
 						className: "mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]",
-						children: [/* @__PURE__ */ _("section", {
+						children: [/* @__PURE__ */ g("section", {
 							className: "min-w-0",
-							children: [/* @__PURE__ */ _("div", {
+							children: [/* @__PURE__ */ g("div", {
 								className: "flex gap-2 border-b border-border pb-2",
 								children: [
-									/* @__PURE__ */ g(a, {
-										onClick: () => M("notes"),
-										disabled: j === "notes",
+									/* @__PURE__ */ h(a, {
+										onClick: () => A("notes"),
+										disabled: k === "notes",
 										children: "Notes"
 									}),
-									/* @__PURE__ */ g(a, {
-										onClick: () => M("sketch"),
-										disabled: j === "sketch",
+									/* @__PURE__ */ h(a, {
+										onClick: () => A("sketch"),
+										disabled: k === "sketch",
 										children: "Sketch"
 									}),
-									/* @__PURE__ */ g(a, {
-										onClick: () => void K(C, "notes"),
+									/* @__PURE__ */ h(a, {
+										onClick: () => void G(x, "notes"),
 										children: "Export notes"
 									}),
-									/* @__PURE__ */ g(a, {
-										onClick: () => void K(C, "sketch"),
+									/* @__PURE__ */ h(a, {
+										onClick: () => void G(x, "sketch"),
 										children: "Export sketch"
 									}),
-									/* @__PURE__ */ g(a, {
-										onClick: () => void K(C, "combined"),
+									/* @__PURE__ */ h(a, {
+										onClick: () => void G(x, "combined"),
 										children: "Combined"
 									})
 								]
-							}), /* @__PURE__ */ g("div", {
+							}), /* @__PURE__ */ h("div", {
 								className: "mt-3 min-h-64 rounded-md border border-border p-4",
-								children: j === "notes" ? /* @__PURE__ */ g(ee, { content: V.data?.outputs["whisper-meeting-note-taker"] ?? "_Notes pending._" }) : /* @__PURE__ */ _("div", { children: [/* @__PURE__ */ g("p", {
+								children: k === "notes" ? /* @__PURE__ */ h(ee, { content: B.data?.outputs["whisper-meeting-note-taker"] ?? "_Notes pending._" }) : /* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("p", {
 									className: "text-xs text-muted mb-3",
 									children: "Sketch output is isolated with scripts, navigation, and network access disabled."
-								}), /* @__PURE__ */ g("iframe", {
+								}), /* @__PURE__ */ h("iframe", {
 									title: "Meeting sketch",
 									sandbox: "allow-scripts",
-									srcDoc: ae(V.data?.outputs["whisper-meeting-sketch-artist"] ?? "<p>Sketch pending.</p>"),
-									className: "h-[30rem] w-full rounded-md border border-border bg-surface"
+									srcDoc: oe(B.data?.outputs["whisper-meeting-sketch-artist"] ?? "<p>Sketch pending.</p>"),
+									className: "w-full rounded-md border border-border bg-surface",
+									style: { height: "clamp(36rem, 70vh, 52rem)" }
 								})] })
 							})]
-						}), /* @__PURE__ */ _("section", {
+						}), /* @__PURE__ */ g("section", {
 							className: "min-w-0 lg:border-l lg:border-border lg:pl-5",
-							children: [/* @__PURE__ */ _("div", {
+							children: [/* @__PURE__ */ g("div", {
 								className: "flex flex-wrap items-center justify-between gap-2",
-								children: [/* @__PURE__ */ g("h3", {
+								children: [/* @__PURE__ */ h("h3", {
 									className: "font-medium text-text",
 									children: "Transcript"
-								}), /* @__PURE__ */ _("div", {
+								}), /* @__PURE__ */ g("div", {
 									className: "flex flex-wrap gap-2",
 									children: [
-										/* @__PURE__ */ g(a, {
-											onClick: () => void K(C, "markdown"),
+										/* @__PURE__ */ h(a, {
+											onClick: () => void G(x, "markdown"),
 											children: "Markdown"
 										}),
-										/* @__PURE__ */ g(a, {
-											onClick: () => void K(C, "text"),
+										/* @__PURE__ */ h(a, {
+											onClick: () => void G(x, "text"),
 											children: "Text"
 										}),
-										/* @__PURE__ */ g(a, {
-											onClick: () => void K(C, "json"),
+										/* @__PURE__ */ h(a, {
+											onClick: () => void G(x, "json"),
 											children: "JSON"
 										})
 									]
 								})]
-							}), /* @__PURE__ */ _("div", {
+							}), /* @__PURE__ */ g("div", {
 								className: "mt-3 max-h-[32rem] space-y-2 overflow-y-auto pr-2",
-								children: [oe(B.data?.segments ?? []).map((e) => e.kind === "speech" ? /* @__PURE__ */ _("div", { children: [e.timestamp ? /* @__PURE__ */ g("div", {
+								children: [ce(z.data?.segments ?? []).map((e) => e.kind === "speech" ? /* @__PURE__ */ g("div", { children: [e.timestamp ? /* @__PURE__ */ h("div", {
 									className: "mb-1 mt-4 text-xs font-medium tabular-nums text-muted",
 									children: e.timestamp
-								}) : null, /* @__PURE__ */ g("p", {
+								}) : null, /* @__PURE__ */ h("p", {
 									className: "text-sm leading-relaxed text-text",
 									children: e.text
-								})] }, e.key) : /* @__PURE__ */ _("div", {
+								})] }, e.key) : /* @__PURE__ */ g("div", {
 									className: "flex items-center justify-between gap-3 rounded-md bg-muted/20 px-3 py-2",
-									children: [/* @__PURE__ */ _("span", {
+									children: [/* @__PURE__ */ g("span", {
 										className: "text-xs text-muted",
 										children: [
 											"Silence covered",
@@ -917,55 +955,60 @@ function $() {
 											(e.segment.audio_end_sample / 16e3).toFixed(1),
 											"s"
 										]
-									}), /* @__PURE__ */ g(a, {
-										onClick: () => void J(e.segment.id),
-										disabled: D !== void 0,
-										children: D === e.segment.id ? "Retrying…" : "Recognize again"
+									}), /* @__PURE__ */ h(a, {
+										onClick: () => void q(e.segment.id),
+										disabled: T !== void 0,
+										children: T === e.segment.id ? "Retrying…" : "Recognize again"
 									})]
-								}, e.key)), B.data && B.data.segments.length === 0 ? /* @__PURE__ */ g("p", {
+								}, e.key)), z.data && z.data.segments.length === 0 ? /* @__PURE__ */ h("p", {
 									className: "text-sm text-muted",
 									children: "No committed speech yet."
 								}) : null]
 							})]
 						})]
 					}),
-					/* @__PURE__ */ _("section", {
+					/* @__PURE__ */ g("section", {
 						className: "mt-5 border-t border-border pt-4",
 						children: [
-							/* @__PURE__ */ g("h3", {
+							/* @__PURE__ */ h("h3", {
 								className: "font-medium text-text",
 								children: "Meeting Chat"
 							}),
-							/* @__PURE__ */ g("p", {
+							/* @__PURE__ */ h("p", {
 								className: "mt-1 text-xs text-muted",
 								children: "Add participants, agenda, terminology, or corrections. Messages go to both agents and never rewrite the raw transcript."
 							}),
-							(V.data?.context ?? []).length > 0 ? /* @__PURE__ */ g("div", {
+							(B.data?.context ?? []).length > 0 ? /* @__PURE__ */ h("div", {
 								className: "mt-3 max-h-32 space-y-2 overflow-y-auto",
-								children: V.data?.context.map((t) => /* @__PURE__ */ _("div", {
+								children: B.data?.context.map((t) => /* @__PURE__ */ g("div", {
 									className: "rounded-md bg-muted/20 px-3 py-2 text-sm",
-									children: [/* @__PURE__ */ _("span", {
+									children: [/* @__PURE__ */ g("span", {
 										className: "mr-2 text-xs text-muted",
 										children: ["Typed · ", e(t.created_at)]
 									}), t.text]
 								}, t.id))
 							}) : null,
-							/* @__PURE__ */ _("div", {
+							/* @__PURE__ */ g("form", {
 								className: "mt-3 flex flex-col gap-2 md:flex-row",
-								children: [/* @__PURE__ */ g(u, {
-									value: N,
-									onChange: (e) => P(e.target.value),
+								onSubmit: (e) => {
+									e.preventDefault();
+									let t = j.trim();
+									R.data?.meeting.state === "recording" && t && !U.isPending && U.mutate(t);
+								},
+								children: [/* @__PURE__ */ h(u, {
+									value: j,
+									onChange: (e) => M(e.target.value),
 									placeholder: "Tell the meeting participants, agenda, or a correction…",
 									"aria-label": "Meeting context",
 									maxLength: 4e3,
-									disabled: z.data?.meeting.state !== "recording"
-								}), /* @__PURE__ */ g(a, {
-									onClick: () => W.mutate(N.trim()),
-									disabled: z.data?.meeting.state !== "recording" || !N.trim() || W.isPending,
-									children: W.isPending ? "Sending…" : "Send"
+									disabled: R.data?.meeting.state !== "recording"
+								}), /* @__PURE__ */ h(a, {
+									type: "submit",
+									disabled: R.data?.meeting.state !== "recording" || !j.trim() || U.isPending,
+									children: U.isPending ? "Sending…" : "Send"
 								})]
 							}),
-							z.data?.meeting.state === "recording" ? null : /* @__PURE__ */ g("p", {
+							R.data?.meeting.state === "recording" ? null : /* @__PURE__ */ h("p", {
 								className: "mt-2 text-xs text-muted",
 								children: "Meeting Chat is available while recording."
 							})

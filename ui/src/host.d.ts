@@ -12,12 +12,15 @@ declare module '@kirocrew/app-sdk' {
 }
 
 declare module '@kirocrew/app-sdk/ui' {
-  import type { ComponentType, InputHTMLAttributes, ReactNode } from 'react'
+  import type {
+    ButtonHTMLAttributes,
+    ComponentType,
+    InputHTMLAttributes,
+    ReactNode,
+  } from 'react'
 
   type CommonProps = { children?: ReactNode; className?: string }
-  export const Btn: ComponentType<
-    CommonProps & { onClick?: () => void; disabled?: boolean }
-  >
+  export const Btn: ComponentType<ButtonHTMLAttributes<HTMLButtonElement>>
   export const Card: ComponentType<CommonProps>
   export const CardTitle: ComponentType<CommonProps>
   export const EmptyState: ComponentType<{

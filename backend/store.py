@@ -15,7 +15,7 @@ from typing import Any
 
 from backend.chunks import AudioSpool, ChunkMetadata
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 MIN_FREE_BYTES = 5 * 1024 * 1024 * 1024
 SPOOL_CAP_BYTES = 2 * 1024 * 1024 * 1024
 RAW_AUDIO_RETENTION_DAYS = 7
@@ -132,6 +132,10 @@ class MeetingStore:
             if current < 7:
                 self._migrate_to_v7(connection)
                 connection.execute("PRAGMA user_version = 7")
+                current = 7
+            if current < 8:
+                self._migrate_to_v8(connection)
+                connection.execute("PRAGMA user_version = 8")
             connection.execute(
                 "UPDATE audio_chunks SET state = 'durable' WHERE state = 'recognizing'"
             )
@@ -1723,6 +1727,53 @@ class MeetingStore:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE INDEX meeting_agent_dispatch_queue
+                ON meeting_agent_dispatches (state, created_at, id);
+            CREATE INDEX meeting_agent_dispatch_timeline
+                ON meeting_agent_dispatches (meeting_id, agent_id, created_at, id);
+            """
+        )
+
+    @staticmethod
+    def _migrate_to_v8(connection: sqlite3.Connection) -> None:
+        connection.executescript(
+            """
+            ALTER TABLE meeting_agent_dispatches RENAME TO meeting_agent_dispatches_v7;
+
+            CREATE TABLE meeting_agent_dispatches (
+                id TEXT PRIMARY KEY,
+                meeting_id TEXT NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+                agent_id TEXT NOT NULL,
+                kind TEXT NOT NULL CHECK (
+                    kind IN ('speech', 'chat', 'update', 'finalize')
+                ),
+                first_segment_id INTEGER,
+                last_segment_id INTEGER,
+                context_event_id TEXT REFERENCES meeting_context_events(id) ON DELETE CASCADE,
+                payload_text TEXT NOT NULL,
+                payload_hash TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'pending' CHECK (
+                    state IN ('pending', 'accepted', 'running', 'complete', 'failed')
+                ),
+                execution_ref TEXT NOT NULL DEFAULT '',
+                attempt_count INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            INSERT INTO meeting_agent_dispatches (
+                id, meeting_id, agent_id, kind, first_segment_id,
+                last_segment_id, context_event_id, payload_text, payload_hash,
+                state, execution_ref, attempt_count, last_error, created_at, updated_at
+            )
+            SELECT id, meeting_id, agent_id, kind, first_segment_id,
+                   last_segment_id, context_event_id, payload_text, payload_hash,
+                   state, execution_ref, attempt_count, last_error, created_at, updated_at
+            FROM meeting_agent_dispatches_v7;
+
+            DROP TABLE meeting_agent_dispatches_v7;
 
             CREATE INDEX meeting_agent_dispatch_queue
                 ON meeting_agent_dispatches (state, created_at, id);

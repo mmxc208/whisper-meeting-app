@@ -1,6 +1,6 @@
 # Whisper Meeting Agents MVP Plan
 
-- **Status:** MVP implemented; Phase E live meeting qualification pending
+- **Status:** MVP implemented; low-frequency coalescing optimization in progress
 - **Date:** 2026-10-17
 - **Target app:** Whisper Meeting (`whisper-meeting`)
 - **Target platform:** macOS on Apple Silicon, KiroCrew 0.10.0 or later
@@ -97,8 +97,13 @@ Each accepted message:
 
 1. is durably stored as a typed-context event;
 2. appears in the meeting timeline with its own `Typed` treatment and timestamp;
-3. is immediately dispatched to both listening agents with a chat/context marker;
+3. is merged into each agent's next pending update with a chat/context marker;
 4. remains distinguishable from speech in exports and diagnostics.
+
+The UI acknowledges Meeting Chat immediately, but a message does not create its
+own ACP task. Messages submitted close together are coalesced with speech and
+with one another. This keeps context durable and prompt-visible without doubling
+the task count for every correction or attendee update.
 
 Typed context does not silently rewrite the immutable Whisper transcript. Agents
 apply the correction to notes and diagrams while the original speech record stays
@@ -128,6 +133,8 @@ The Note Taker maintains one complete Markdown document per meeting. It:
 - applies typed corrections and context;
 - reads the current output before every update;
 - rewrites the complete current document after every accepted batch;
+- produces its first live revision no earlier than three minutes after recording
+  begins, then no more often than every five minutes while new input exists;
 - never invents an owner, deadline, participant, decision, or fact.
 
 ### 5.2 Sketch Artist
@@ -139,6 +146,8 @@ It:
 - uses Mermaid for diagrams and plain HTML/CSS for tables or comparisons;
 - revises the current visual rather than accumulating versions;
 - redraws only when a genuinely visual concept or relevant correction appears;
+- produces no automatic live revision before five minutes and runs no more often
+  than every ten minutes after that;
 - applies typed corrections that change labels, entities, or relationships;
 - performs no network request and references no remote asset.
 
@@ -209,13 +218,23 @@ microphone
 Meeting Chat
    -> typed-context event
    -> transcript timeline projection
-   -> immediate dispatch to both listening agents
+   -> each agent's single coalesced pending update
 ```
 
-Speech delivery is batched every 30 seconds or when a bounded character threshold
-is reached, whichever comes first. Typed context bypasses the timer and requests
-an immediate flush. The 30-second default matches KiroCrew's proven Meetings
-batch interval and is not tuned in this MVP without measured evidence.
+Recognized speech and typed context are accumulated durably per agent. The Note
+Taker becomes eligible for its first live update at three minutes and every five
+minutes thereafter. The Sketch Artist becomes eligible at five minutes and no
+more than every ten minutes thereafter. A timer never creates work when there is
+no new input. The complete coalesced payload is materialized as an app-owned
+dispatch input file; the provider task carries only the stable dispatch marker
+and input/output paths. Provider task character limits therefore do not truncate
+meeting content or create extra tasks.
+
+Each agent owns at most one immutable running dispatch and one mutable pending
+dispatch. New speech and context merge into the pending dispatch while a task is
+running. Meeting End promotes that pending work into one final dispatch, folding
+in all remaining speech, context, and finalization instructions. It must not
+queue a speech task followed by a separate finalize task.
 
 ### 6.3 Additive persistence
 
@@ -237,7 +256,7 @@ Conceptually it contains:
 
 - deterministic dispatch ID;
 - meeting and agent IDs;
-- kind: `speech`, `chat`, or `finalize`;
+- kind: `update` or `finalize` (legacy rows may retain `speech` or `chat`);
 - first and last speech segment IDs when applicable;
 - payload hash;
 - state: `pending`, `accepted`, `complete`, or `failed`;
@@ -263,8 +282,8 @@ records.
   mode's status API before retry, rather than blindly issuing duplicate work.
 - Duplicate transcript delivery must be harmless: agents rewrite complete
   outputs and receive stable dispatch IDs.
-- Each agent has at most one running task or turn per meeting, preventing two
-  concurrent batches from rewriting the same output file.
+- Each agent has at most one running task and one coalesced pending task per
+  meeting, preventing concurrent rewrites and unbounded task queues.
 - Route changes and page reloads reconstruct pending work from the backend
   ledger and task or slot status, not from React component state.
 - Agent turns may lag arbitrarily far behind recording without stopping capture.
@@ -283,14 +302,15 @@ Agent startup is never on the critical path for microphone capture.
 ### Recording
 
 - Append speech to the existing transcript.
-- Allocate agent batches from new visible speech segments.
-- Dispatch on the interval/size boundary.
+- Merge new visible speech and typed context into the agent's pending update.
+- Dispatch only when that agent's minimum cadence has elapsed.
 - Poll or stream agent state and output revisions into the UI.
 
 ### Pause
 
 - Preserve the existing audio flush and exact cut behavior.
-- Dispatch the remaining complete transcript batch.
+- Preserve complete transcript/context input in the coalesced pending update;
+  Pause does not bypass the agent cadence.
 - Disable Meeting Chat while the meeting ingress is paused.
 - Keep agent execution and output available for reading.
 
@@ -303,11 +323,13 @@ Agent startup is never on the critical path for microphone capture.
 ### End
 
 1. Preserve the existing audio stop and Whisper drain.
-2. Durably allocate remaining speech dispatches and one finalize dispatch for
-   each agent without waiting for either to run.
-3. Mark the meeting `Ended` as soon as those dispatch records are committed.
-4. Let the coordinator deliver and reconcile the agent work in the background.
-5. Show `Finishing notes` or `Finishing sketch` until background work completes;
+2. Merge remaining speech, typed context, and finalization instructions into at
+   most one pending final dispatch per agent without waiting for either to run.
+3. If an agent task is already running, keep exactly one final dispatch behind
+   it; otherwise dispatch the final work immediately.
+4. Mark the meeting `Ended` as soon as those records are committed.
+5. Let the coordinator deliver and reconcile the agent work in the background.
+6. Show `Finishing notes` or `Finishing sketch` until background work completes;
    keep the meeting and partial outputs readable throughout.
 
 There is no task-review or `Reviewing` lifecycle state in this MVP. If an agent is
@@ -470,6 +492,28 @@ Notes incorporated the typed topic and attendee context, and the final Sketch
 rendered in the sandboxed iframe. Full Phase E remains open because this meeting
 did not exercise Pause/Resume.
 
+That meeting lasted 4 minutes 6 seconds and exposed an unacceptable task-cost
+shape: each agent ran seven 30-second speech tasks, two independent Meeting Chat
+tasks, and one finalize task, for 20 Claude tasks total. Version 0.2.3 also proved
+that an expired app-scoped gateway token can be reauthenticated without losing
+the durable queue. The next optimization keeps that recovery model but replaces
+30-second dispatch and per-message tasks with the coalesced cadence in section
+6.2. For a meeting under five minutes with two context messages, the acceptance
+budget is two Note Taker tasks and one Sketch Artist task by default, or at most
+four total when an explicit visual update is requested.
+
+Version 0.3.0 implements that low-frequency coordinator. A deterministic
+4-minute-6-second qualification with two context messages produced exactly two
+Note tasks and one Sketch task. After sync into the running KiroCrew instance, a
+short acceptance meeting stored one Meeting Chat event without creating a task;
+End then created exactly one final task per agent. Both completed with 52/52
+audio chunks covered, and the acceptance meeting was removed after validation.
+
+A later live meeting exposed the provider's 5,000-character task limit when a
+Sketch batch reached 5,946 characters. Version 0.3.3 moves complete dispatch
+payloads into durable app-owned input files and keeps gateway task prompts short,
+so large coalesced batches remain lossless without increasing task frequency.
+
 **Decision:** GO with stateless dispatch and direct app-owned output files. Do
 not grant `/api/chat` or `/api/chat/slots`. Phase A is complete: the real restart
 qualification proves durable reconciliation without duplicate output, the
@@ -541,6 +585,18 @@ built-in Meetings app.
 
 **Exit:** every acceptance item below passes with saved evidence.
 
+### Phase F — low-frequency coalescing
+
+- Replace 30-second allocation with the per-agent cadence in section 6.2.
+- Keep one mutable pending update behind at most one immutable running task.
+- Coalesce Meeting Chat with speech rather than spawning per-message tasks.
+- Fold remaining input and finalize instructions into one End dispatch.
+- Preserve restart, token-expiry, and deterministic-ID recovery.
+
+**Exit:** a four-to-five-minute qualification meeting with two context messages
+finishes with three tasks by default and never exceeds four without losing any
+speech segment or typed context.
+
 ## 12. Acceptance checklist
 
 ### Existing recording path
@@ -552,7 +608,9 @@ built-in Meetings app.
 
 ### Note Taker
 
-- [ ] A one-minute discussion produces at least two live note revisions.
+- [ ] No live Note task starts before three minutes of an active meeting.
+- [ ] The first Note update is eligible at three minutes and later updates are
+      separated by at least five minutes while new input exists.
 - [ ] Participants and agenda supplied through Chat appear in notes.
 - [ ] A terminology or factual correction updates notes without rewriting the raw
       transcript.
@@ -571,7 +629,8 @@ built-in Meetings app.
 
 - [ ] Every submitted message is durably stored before dispatch.
 - [ ] Typed messages appear with timestamp and a distinct source treatment.
-- [ ] Messages reach both listening agents immediately.
+- [ ] Messages merge into both agents' next pending update without creating a
+      dedicated task per message.
 - [ ] An unavailable agent does not prevent delivery to the other agent.
 - [ ] Failed or indeterminate delivery remains visible and retryable.
 
@@ -585,6 +644,10 @@ built-in Meetings app.
 - [ ] `Finishing notes` and `Finishing sketch` resolve independently to a final
       or actionable failed state.
 - [ ] No task-review or stuck `Reviewing` state is introduced.
+- [ ] Each agent has at most one running and one pending dispatch.
+- [ ] End produces at most one additional final dispatch per agent.
+- [ ] A four-to-five-minute meeting with two context messages uses three tasks by
+      default and at most four when an explicit visual update is requested.
 - [ ] Configured ACP-backend unavailability leaves transcription usable and
       explains the degraded agent state.
 - [ ] The app does not switch to a different backend after failure.

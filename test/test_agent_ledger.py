@@ -55,6 +55,11 @@ def test_speech_and_context_allocate_durable_idempotent_work(tmp_path: Path) -> 
     store, ledger = _active_meeting(tmp_path)
     ledger.initialize_outputs(meeting_id=MEETING_ID, owner_id="owner")
     _insert_speech(store)
+    context = ledger.append_context(
+        meeting_id=MEETING_ID,
+        owner_id="owner",
+        text="  The correct product name is KiroCrew.  ",
+    )
 
     speech = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
     assert len(speech) == 2
@@ -64,23 +69,18 @@ def test_speech_and_context_allocate_durable_idempotent_work(tmp_path: Path) -> 
 
     note = ledger.claim_next(agent_id=NOTE_AGENT)
     assert note is not None
-    assert note["kind"] == "speech"
+    assert note["kind"] == "update"
+    assert "The correct product name is KiroCrew." in note["payload_text"]
     assert note["attempt_count"] == 1
     ledger.mark_accepted(dispatch_id=note["id"], execution_ref="task-1")
     ledger.complete(dispatch_id=note["id"])
 
-    context = ledger.append_context(
-        meeting_id=MEETING_ID,
-        owner_id="owner",
-        text="  The correct product name is KiroCrew.  ",
-    )
-    assert context["text"] == "The correct product name is KiroCrew."
     snapshot = ledger.snapshot(meeting_id=MEETING_ID, owner_id="owner")
     note_state = next(row for row in snapshot["agents"] if row["agent_id"] == NOTE_AGENT)
     assert note_state["delivered_through_segment_id"] == 2
     assert note_state["output_revision"] == 1
     assert snapshot["context"] == [context]
-    assert {row["kind"] for row in snapshot["dispatches"]} == {"speech", "chat"}
+    assert {row["kind"] for row in snapshot["dispatches"]} == {"update"}
     assert all("payload_text" not in row for row in snapshot["dispatches"])
 
 
@@ -103,6 +103,31 @@ def test_finalize_is_idempotent_and_does_not_hold_meeting_end(tmp_path: Path) ->
 
     assert [row["id"] for row in first] == [row["id"] for row in second]
     assert len(first) == 2
+
+
+def test_end_promotes_each_pending_update_instead_of_adding_another_task(
+    tmp_path: Path,
+) -> None:
+    store, ledger = _active_meeting(tmp_path)
+    _insert_speech(store)
+    ledger.append_context(meeting_id=MEETING_ID, owner_id="owner", text="Agenda: launch")
+    pending = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
+    operation = store.request_drain(
+        meeting_id=MEETING_ID,
+        owner_id="owner",
+        kind="end",
+        epoch=1,
+        cut_sequence=-1,
+        cut_sample=0,
+    )
+    assert operation["state"] == "complete"
+
+    final = ledger.queue_finalize(meeting_id=MEETING_ID, owner_id="owner")
+
+    assert {row["id"] for row in final} == {row["id"] for row in pending}
+    assert {row["kind"] for row in final} == {"finalize"}
+    snapshot = ledger.snapshot(meeting_id=MEETING_ID, owner_id="owner")
+    assert len(snapshot["dispatches"]) == 2
 
 
 def test_failed_dispatches_can_be_retried_by_meeting_agent(tmp_path: Path) -> None:
@@ -136,7 +161,7 @@ def test_failed_dispatches_can_be_retried_by_meeting_agent(tmp_path: Path) -> No
     assert note["last_error"] == ""
 
 
-def test_long_transcript_backlog_is_allocated_in_bounded_batches(tmp_path: Path) -> None:
+def test_long_transcript_backlog_is_coalesced_into_one_pending_update(tmp_path: Path) -> None:
     store, ledger = _active_meeting(tmp_path)
     with store._connect() as connection:
         connection.executemany(
@@ -155,8 +180,27 @@ def test_long_transcript_backlog_is_allocated_in_bounded_batches(tmp_path: Path)
 
     first = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
     second = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
-    third = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
 
-    assert {row["last_segment_id"] for row in first} == {1}
-    assert {row["last_segment_id"] for row in second} == {2}
-    assert third == []
+    assert {row["last_segment_id"] for row in first} == {2}
+    assert second == []
+    snapshot = ledger.snapshot(meeting_id=MEETING_ID, owner_id="owner")
+    assert len(snapshot["dispatches"]) == 2
+
+
+def test_new_input_merges_into_each_existing_pending_update(tmp_path: Path) -> None:
+    store, ledger = _active_meeting(tmp_path)
+    _insert_speech(store)
+    first = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
+    first_ids = {row["agent_id"]: row["id"] for row in first}
+
+    ledger.append_context(
+        meeting_id=MEETING_ID,
+        owner_id="owner",
+        text="Attendees are Alice and Bob.",
+    )
+    merged = ledger.queue_speech(meeting_id=MEETING_ID, owner_id="owner")
+
+    assert {row["agent_id"]: row["id"] for row in merged} == first_ids
+    assert all("Attendees are Alice and Bob." in row["payload_text"] for row in merged)
+    snapshot = ledger.snapshot(meeting_id=MEETING_ID, owner_id="owner")
+    assert len(snapshot["dispatches"]) == 2

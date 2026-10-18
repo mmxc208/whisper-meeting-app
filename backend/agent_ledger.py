@@ -16,7 +16,6 @@ NOTE_AGENT = "whisper-meeting-note-taker"
 SKETCH_AGENT = "whisper-meeting-sketch-artist"
 AGENT_IDS = (NOTE_AGENT, SKETCH_AGENT)
 MAX_CONTEXT_CHARS = 4_000
-MAX_BATCH_CHARS = 12_000
 
 
 class DispatchNotFound(RuntimeError):
@@ -71,6 +70,28 @@ class AgentLedger:
         filename = "note-taker.md" if agent_id == NOTE_AGENT else "sketch-artist.html"
         return self.data_dir / "sessions" / meeting_id / "agents" / filename
 
+    def materialize_dispatch_input(self, dispatch: dict[str, Any]) -> Path:
+        """Write one immutable dispatch payload for an agent to read in full."""
+
+        meeting_id = str(dispatch["meeting_id"])
+        dispatch_id = str(dispatch["id"])
+        try:
+            if str(uuid.UUID(meeting_id)) != meeting_id:
+                raise ValueError
+            if len(dispatch_id) != 32 or any(
+                character not in "0123456789abcdef" for character in dispatch_id
+            ):
+                raise ValueError
+        except ValueError as exc:
+            raise DispatchNotFound(dispatch_id) from exc
+        input_dir = self.data_dir / "sessions" / meeting_id / "agents" / "inputs"
+        input_dir.mkdir(parents=True, exist_ok=True)
+        path = input_dir / f"{dispatch_id}.md"
+        temporary = input_dir / f".{dispatch_id}.tmp"
+        temporary.write_text(str(dispatch["payload_text"]), encoding="utf-8")
+        temporary.replace(path)
+        return path
+
     def append_context(self, *, meeting_id: str, owner_id: str, text: str) -> dict[str, Any]:
         normalized = text.strip()
         if not normalized:
@@ -92,21 +113,38 @@ class AgentLedger:
                 (event_id, meeting_id, normalized, now),
             )
             for agent_id in AGENT_IDS:
-                self._insert_dispatch(
-                    connection,
-                    meeting_id=meeting_id,
-                    agent_id=agent_id,
-                    kind="chat",
-                    payload=f"[typed context]\n{normalized}",
-                    now=now,
-                    context_event_id=event_id,
-                )
                 self._ensure_state(connection, meeting_id=meeting_id, agent_id=agent_id, now=now)
             connection.commit()
         return {"id": event_id, "text": normalized, "created_at": now}
 
     def queue_speech(self, *, meeting_id: str, owner_id: str) -> list[dict[str, Any]]:
-        self._require_meeting(meeting_id=meeting_id, owner_id=owner_id)
+        """Compatibility wrapper that coalesces one update for each agent."""
+
+        rows = []
+        for agent_id in AGENT_IDS:
+            row = self.queue_update(
+                meeting_id=meeting_id,
+                owner_id=owner_id,
+                agent_id=agent_id,
+            )
+            if row is not None:
+                rows.append(row)
+        return rows
+
+    def queue_update(
+        self,
+        *,
+        meeting_id: str,
+        owner_id: str,
+        agent_id: str,
+        final: bool = False,
+    ) -> dict[str, Any] | None:
+        """Merge all newly visible input into one pending dispatch for an agent."""
+
+        self._require_agent(agent_id)
+        meeting = self._require_meeting(meeting_id=meeting_id, owner_id=owner_id)
+        if final and meeting["state"] != "ended":
+            raise InvalidMeeting("agent finalization requires an ended meeting")
         now = self._clock()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -115,12 +153,12 @@ class AgentLedger:
                     """
                     SELECT COALESCE(MAX(last_segment_id), 0)
                     FROM meeting_agent_dispatches
-                    WHERE meeting_id = ? AND kind = 'speech'
+                    WHERE meeting_id = ? AND agent_id = ?
                     """,
-                    (meeting_id,),
+                    (meeting_id, agent_id),
                 ).fetchone()[0]
             )
-            rows = connection.execute(
+            speech_rows = connection.execute(
                 """
                 SELECT id, epoch, audio_start_sample, language, text
                 FROM transcript_segments
@@ -129,73 +167,120 @@ class AgentLedger:
                 """,
                 (meeting_id, allocated_through),
             ).fetchall()
-            selected: list[sqlite3.Row] = []
-            size = 0
-            for row in rows:
-                line = self._speech_line(row)
-                if selected and size + len(line) > MAX_BATCH_CHARS:
-                    break
-                selected.append(row)
-                size += len(line)
-            if not selected:
+
+            context_cursor = connection.execute(
+                """
+                SELECT event.rowid
+                FROM meeting_agent_dispatches AS dispatch
+                JOIN meeting_context_events AS event
+                  ON event.id = dispatch.context_event_id
+                WHERE dispatch.meeting_id = ? AND dispatch.agent_id = ?
+                ORDER BY event.rowid DESC LIMIT 1
+                """,
+                (meeting_id, agent_id),
+            ).fetchone()
+            context_rows = connection.execute(
+                """
+                SELECT rowid, id, text, created_at
+                FROM meeting_context_events
+                WHERE meeting_id = ? AND rowid > ?
+                ORDER BY rowid
+                """,
+                (meeting_id, int(context_cursor[0]) if context_cursor else 0),
+            ).fetchall()
+
+            if not speech_rows and not context_rows and not final:
                 connection.rollback()
-                return []
-            payload = "[finalized speech]\n" + "\n\n".join(
-                self._speech_line(row) for row in selected
-            )
-            first_segment_id = int(selected[0]["id"])
-            last_segment_id = int(selected[-1]["id"])
-            dispatches = []
-            for agent_id in AGENT_IDS:
-                dispatches.append(
-                    dict(
-                        self._insert_dispatch(
-                            connection,
-                            meeting_id=meeting_id,
-                            agent_id=agent_id,
-                            kind="speech",
-                            payload=payload,
-                            now=now,
-                            first_segment_id=first_segment_id,
-                            last_segment_id=last_segment_id,
-                        )
-                    )
+                return None
+
+            parts = []
+            if speech_rows:
+                parts.append(
+                    "[finalized speech]\n"
+                    + "\n\n".join(self._speech_line(row) for row in speech_rows)
                 )
-                self._ensure_state(connection, meeting_id=meeting_id, agent_id=agent_id, now=now)
+            if context_rows:
+                parts.append(
+                    "[typed context]\n"
+                    + "\n".join(str(row["text"]).strip() for row in context_rows)
+                )
+            if final:
+                parts.append(
+                    "[finalize]\nThe meeting has ended. Make one final coherent pass. "
+                    "Do not invent missing details."
+                )
+
+            pending = connection.execute(
+                """
+                SELECT * FROM meeting_agent_dispatches
+                WHERE meeting_id = ? AND agent_id = ? AND state = 'pending'
+                ORDER BY rowid LIMIT 1
+                """,
+                (meeting_id, agent_id),
+            ).fetchone()
+            first_segment_id = int(speech_rows[0]["id"]) if speech_rows else None
+            last_segment_id = int(speech_rows[-1]["id"]) if speech_rows else None
+            context_event_id = str(context_rows[-1]["id"]) if context_rows else None
+            addition = "\n\n".join(parts)
+            if pending is None:
+                pending = self._insert_dispatch(
+                    connection,
+                    meeting_id=meeting_id,
+                    agent_id=agent_id,
+                    kind="finalize" if final else "update",
+                    payload=addition,
+                    now=now,
+                    first_segment_id=first_segment_id,
+                    last_segment_id=last_segment_id,
+                    context_event_id=context_event_id,
+                )
+            else:
+                payload = str(pending["payload_text"])
+                if addition:
+                    payload = f"{payload}\n\n{addition}" if payload else addition
+                connection.execute(
+                    """
+                    UPDATE meeting_agent_dispatches
+                    SET kind = ?,
+                        first_segment_id = COALESCE(first_segment_id, ?),
+                        last_segment_id = COALESCE(?, last_segment_id),
+                        context_event_id = COALESCE(?, context_event_id),
+                        payload_text = ?, payload_hash = ?, updated_at = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        "finalize" if final else pending["kind"],
+                        first_segment_id,
+                        last_segment_id,
+                        context_event_id,
+                        payload,
+                        hashlib.sha256(payload.encode("utf-8")).hexdigest(),
+                        now,
+                        pending["id"],
+                    ),
+                )
+                pending = connection.execute(
+                    "SELECT * FROM meeting_agent_dispatches WHERE id = ?", (pending["id"],)
+                ).fetchone()
+            self._ensure_state(connection, meeting_id=meeting_id, agent_id=agent_id, now=now)
             connection.commit()
-        return dispatches
+        return dict(pending) if pending is not None else None
 
     def queue_finalize(self, *, meeting_id: str, owner_id: str) -> list[dict[str, Any]]:
         meeting = self._require_meeting(meeting_id=meeting_id, owner_id=owner_id)
         if meeting["state"] != "ended":
             raise InvalidMeeting("agent finalization requires an ended meeting")
-        now = self._clock()
         dispatches = []
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            for agent_id in AGENT_IDS:
-                existing = connection.execute(
-                    """
-                    SELECT * FROM meeting_agent_dispatches
-                    WHERE meeting_id = ? AND agent_id = ? AND kind = 'finalize'
-                    """,
-                    (meeting_id, agent_id),
-                ).fetchone()
-                if existing is None:
-                    existing = self._insert_dispatch(
-                        connection,
-                        meeting_id=meeting_id,
-                        agent_id=agent_id,
-                        kind="finalize",
-                        payload=(
-                            "[finalize]\nThe meeting has ended. Read the current output and make "
-                            "one final coherent pass. Do not invent missing details."
-                        ),
-                        now=now,
-                    )
-                self._ensure_state(connection, meeting_id=meeting_id, agent_id=agent_id, now=now)
-                dispatches.append(dict(existing))
-            connection.commit()
+        for agent_id in AGENT_IDS:
+            existing = self.final_dispatch(meeting_id=meeting_id, agent_id=agent_id)
+            row = existing or self.queue_update(
+                meeting_id=meeting_id,
+                owner_id=owner_id,
+                agent_id=agent_id,
+                final=True,
+            )
+            if row is not None:
+                dispatches.append(row)
         return dispatches
 
     def claim_next(self, *, agent_id: str) -> dict[str, Any] | None:
@@ -262,17 +347,55 @@ class AgentLedger:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT meeting.id, meeting.owner_id, meeting.state
+                SELECT meeting.id, meeting.owner_id, meeting.state, meeting.created_at
                 FROM meetings AS meeting
                 WHERE meeting.state IN ('recording', 'paused', 'draining', 'ended')
                   AND EXISTS (
                       SELECT 1 FROM meeting_agent_state AS agent_state
                       WHERE agent_state.meeting_id = meeting.id
                   )
+                  AND (
+                      meeting.state != 'ended'
+                      OR EXISTS (
+                          SELECT 1 FROM meeting_agent_state AS active_agent
+                          WHERE active_agent.meeting_id = meeting.id
+                            AND active_agent.state NOT IN ('complete', 'failed')
+                      )
+                  )
                 ORDER BY created_at, id
                 """
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def latest_live_dispatch_at(self, *, meeting_id: str, agent_id: str) -> str:
+        """Return the allocation time of the newest non-final agent update."""
+
+        self._require_agent(agent_id)
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT created_at FROM meeting_agent_dispatches
+                WHERE meeting_id = ? AND agent_id = ? AND kind != 'finalize'
+                ORDER BY rowid DESC LIMIT 1
+                """,
+                (meeting_id, agent_id),
+            ).fetchone()
+        return str(row["created_at"]) if row is not None else ""
+
+    def has_pending_dispatch(self, *, meeting_id: str, agent_id: str) -> bool:
+        """Return whether new input can merge without creating another task."""
+
+        self._require_agent(agent_id)
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT 1 FROM meeting_agent_dispatches
+                WHERE meeting_id = ? AND agent_id = ? AND state = 'pending'
+                LIMIT 1
+                """,
+                (meeting_id, agent_id),
+            ).fetchone()
+        return row is not None
 
     def mark_accepted(self, *, dispatch_id: str, execution_ref: str) -> None:
         self._transition(dispatch_id, state="accepted", execution_ref=execution_ref)
@@ -638,6 +761,18 @@ class AgentLedger:
         if row is None:
             raise DispatchNotFound(dispatch_id)
         return row
+
+    def final_dispatch(self, *, meeting_id: str, agent_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT * FROM meeting_agent_dispatches
+                WHERE meeting_id = ? AND agent_id = ? AND kind = 'finalize'
+                ORDER BY rowid DESC LIMIT 1
+                """,
+                (meeting_id, agent_id),
+            ).fetchone()
+        return dict(row) if row is not None else None
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.database_path, timeout=10.0)

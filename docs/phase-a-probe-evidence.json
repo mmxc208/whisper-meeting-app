@@ -1,6 +1,6 @@
 {
   "app": "whisper-meeting",
-  "app_version": "0.2.3",
+  "app_version": "0.3.4",
   "configured_backend": "claude",
   "decision": {
     "direct_output": "go",
@@ -88,6 +88,51 @@
     "sketch_artist_complete": true,
     "transcript_chunks_covered": 754,
     "ui_caught_up_observed": true
+  },
+  "low_frequency_coalescing": {
+    "default_cadence_seconds": {
+      "note_first": 180,
+      "note_repeat": 300,
+      "sketch_first": 300,
+      "sketch_repeat": 600
+    },
+    "four_minute_budget": {
+      "context_messages": 2,
+      "duration_seconds": 246,
+      "note_tasks": 2,
+      "sketch_tasks": 1,
+      "total_tasks": 3
+    },
+    "provider_prompt_limit": {
+      "dispatch_input_file_lossless_over_5000_chars": true,
+      "gateway_task_prompt_under_5000_chars": true,
+      "running_recovery": {
+        "next_note_payload_chars_accepted": 6985,
+        "note_payload_chars_completed": 5799,
+        "sketch_payload_chars_completed": 5527,
+        "transcription_continued_during_sync": true
+      }
+    },
+    "python_tests_passed": 98,
+    "schema_migration_rehearsal": {
+      "after_version": 8,
+      "before_version": 7,
+      "context_events_preserved": 4,
+      "dispatches_preserved": 30,
+      "meetings_preserved": 11
+    },
+    "running_app_acceptance": {
+      "app_version": "0.3.0",
+      "context_events_before_end": 1,
+      "dispatches_before_end": 0,
+      "final_dispatches_complete": 2,
+      "final_note_tasks": 1,
+      "final_sketch_tasks": 1,
+      "schema_version": 8,
+      "test_meeting_removed_after_validation": true,
+      "transcript_chunks_captured": 52,
+      "transcript_chunks_covered": 52
+    }
   },
   "verified": {
     "agent_materialization": true,

@@ -46,7 +46,7 @@ Alternatively, create a deterministic source archive:
 
 ```bash
 python scripts/package_local_meeting_app.py \
-  --output dist/whisper-meeting-0.2.3.tar.gz
+  --output dist/whisper-meeting-0.3.4.tar.gz
 ```
 
 Extract the archive and pass its root directory to `kirocrew app install`.
