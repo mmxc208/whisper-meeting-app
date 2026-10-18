@@ -1,10 +1,10 @@
 ---
 title: Local Meeting Transcription App — durable, local-first capture on macOS
-status: draft
+status: implemented
 author: KiroCrew contributors
 created: 2026-10-17
-last-audited: 2026-10-17
-audited-at: 56825903dc
+last-audited: 2026-10-18
+audited-at: d4f458fd08
 doc-pr: null
 implementation-prs: []
 tracking-issues: []
@@ -14,10 +14,12 @@ superseded-by: []
 
 # RFC: Local Meeting Transcription App
 
-> **Status:** `implementing`. This document defines a first MVP for the independently
+> **Status:** `implemented`. This document defines the transcription foundation for the independently
 > installed **Whisper Meeting** App Kit app (`whisper-meeting`). It does not modify
 > or replace the built-in Meetings app. Phases 0 through 5 are implemented in
-> this standalone repository; Phase 5 wall-clock field qualification remains. The App Kit platform
+> this standalone repository. Core live-meeting validation is complete; the
+> multi-hour thermal run and the broader combined recovery matrix remain
+> qualification work rather than missing MVP features. The App Kit platform
 > already provides installable renderer-plus-backend apps, an HTTP reverse proxy
 > with SSE support, signed backend requests, minimum Kiro Crew version gates, and
 > a `data/` directory preserved across app updates.
@@ -98,7 +100,11 @@ Meetings patch.
 - Speaker diarization, speaker naming, translation or live interpretation.
   Best-effort `Speaker 1`/`Speaker 2` labels are deferred to a post-MVP,
   post-meeting processing phase and do not shape the MVP completion contract.
-- Automatic summaries, action items, calendar integration or agent workflows.
+- General-purpose agent workflows, arbitrary meeting agents, automatic
+  action-item extraction/review, task filing, or calendar integration. A later
+  MVP extension adds exactly two fixed downstream agents—Note Taker and Sketch
+  Artist—and Meeting Chat without changing this capture contract; see
+  [`mvp-meeting-agents-plan.md`](mvp-meeting-agents-plan.md).
 - Live provisional captions. The MVP shows committed final transcript only.
 - Cloud transcription, AWS Transcribe, Apple Speech, or selectable providers.
 - Multiple local model families or a general model marketplace.
@@ -476,7 +482,9 @@ state. The request-serving process must remain responsive while inference runs.
 The MVP explicitly accepts that app-owned `data/` is not isolated from an agent
 that already has a file-reading tool and access to the Kiro Crew data home. App
 manifests cannot declare a new sandbox-hidden path, and
-[`rfc-app-sandbox-isolation.md`](rfc-app-sandbox-isolation.md) does not provide
+Kiro Crew's
+[`rfc-app-sandbox-isolation.md`](https://github.com/kirodotdev/KiroCrew/blob/main/docs/request-for-change/rfc-app-sandbox-isolation.md)
+does not provide
 third-party app file isolation. The spool and transcript are therefore local and
 owner-scoped through the HTTP API, but not confidential from a locally trusted
 agent. This is disclosed in setup and privacy copy. Encryption and agent-proof

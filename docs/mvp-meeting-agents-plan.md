@@ -1,6 +1,6 @@
 # Whisper Meeting Agents MVP Plan
 
-- **Status:** MVP implemented; low-frequency coalescing optimization in progress
+- **Status:** MVP implemented and live-tested; extended recovery matrix remains
 - **Date:** 2026-10-17
 - **Target app:** Whisper Meeting (`whisper-meeting`)
 - **Target platform:** macOS on Apple Silicon, KiroCrew 0.10.0 or later
@@ -8,7 +8,8 @@
 ## 1. Decision summary
 
 The existing Whisper Meeting capture and transcription MVP is the foundation and
-is not redesigned by this plan. The next MVP adds three capabilities:
+is not redesigned by this plan. The implemented agent MVP adds three
+capabilities:
 
 1. a live **Note Taker**;
 2. a live **Sketch Artist**;
@@ -24,6 +25,22 @@ harness is a local process, but its model may be remote: for example, the
 configured Claude, Kiro, or Codex backend sends meeting text to its provider.
 The app does not add an app-controlled cloud endpoint, choose a provider, or
 silently fall back to a different backend.
+
+### Current implementation status
+
+| Phase | Status | Current evidence |
+|---|---|---|
+| A — platform proof | Complete | App agents, direct app-owned output, scoped `/api/spawn`, restart reconciliation, and secure rendering qualified |
+| B — durable coordinator | Complete | Durable cursors, deterministic dispatch IDs, retry, and one-running/one-pending coalescing implemented |
+| C — agents and secure outputs | Complete | Note Taker and Sketch Artist write versioned outputs; Mermaid/HTML is sanitized and sandboxed |
+| D — meeting workspace | Complete | Notes, expanded Sketch, transcript, Meeting Chat, statuses, Enter-to-send, and exports are in the live UI |
+| E — live qualification | Core path complete | Live meetings exercised Meeting Chat, agents, Pause/Resume, End, and exports; the combined route-away/reload/gateway-restart scenario remains |
+| F — low-frequency coalescing | Complete | A deterministic 4:06 meeting with two context messages used two Note tasks and one Sketch task |
+
+Version 0.3.3 moved full agent batches into durable input files to avoid the
+provider's 5,000-character task limit. Version 0.3.4 made standalone Sketch
+exports carry their Mermaid runtime inline, so exported diagrams render without
+network access.
 
 ## 2. Goal
 
