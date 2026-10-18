@@ -5,6 +5,12 @@ meeting transcription on Apple Silicon Macs. It does not share capture,
 transport, session state, or recovery logic with the built-in Meetings app or
 Chat Dictation.
 
+Audio capture and Whisper inference stay local. The optional Note Taker and
+Sketch Artist receive transcript text and Meeting Chat context through the
+user's configured Kiro Crew ACP backend. With a cloud-backed provider such as
+Claude, Kiro, or Codex, that text crosses the provider boundary; audio never
+does, and the app adds no cloud endpoint of its own.
+
 ## Requirements
 
 - Kiro Crew 0.10.0 or newer
@@ -40,7 +46,7 @@ Alternatively, create a deterministic source archive:
 
 ```bash
 python scripts/package_local_meeting_app.py \
-  --output dist/whisper-meeting-0.1.6.tar.gz
+  --output dist/whisper-meeting-0.2.3.tar.gz
 ```
 
 Extract the archive and pass its root directory to `kirocrew app install`.

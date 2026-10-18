@@ -12,8 +12,10 @@ import tarfile
 from pathlib import Path
 
 RUNTIME_PATTERNS = (
+    "ATTRIBUTION",
     "app.json",
     "requirements.txt",
+    "agents/*.json",
     "backend/*.py",
     "ui/dist/index.mjs",
     "ui/dist/whisper-meeting-worklet.js",

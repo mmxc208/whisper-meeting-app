@@ -1,8 +1,25 @@
 import { fmtDateTime, useAppApi } from '@kirocrew/app-sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Btn, Card, CardTitle, EmptyState, ErrorNotice, Input, PageHeader, StatCard } from '@kirocrew/app-sdk/ui'
+import {
+  Btn,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorNotice,
+  Input,
+  MarkdownRenderer,
+  PageHeader,
+  StatCard,
+} from '@kirocrew/app-sdk/ui'
 import { useEffect, useState, useSyncExternalStore } from 'react'
+import {
+  NOTE_AGENT,
+  SKETCH_AGENT,
+  agentSnapshotNeedsPolling,
+  agentStateLabel,
+} from './agentStatus'
 import { captureEngine, captureSnapshot, subscribeCapture } from './captureEngine'
+import { buildSketchSrcdoc } from './sketchSrcdoc'
 import { visibleTranscriptRows } from './transcript'
 
 type Meeting = {
@@ -51,6 +68,26 @@ type ModelStatus = {
   error: string
 }
 type ModelResult = { model: ModelStatus }
+type AgentState = {
+  agent_id: string
+  state: string
+  output_revision: number
+  last_error: string
+}
+type AgentResult = {
+  agents: AgentState[]
+  context: Array<{ id: string; text: string; created_at: string }>
+  dispatch_counts: Array<{ agent_id: string; state: string; count: number }>
+  dispatches: Array<{
+    id: string
+    agent_id: string
+    kind: string
+    state: string
+    attempt_count: number
+    last_error: string
+  }>
+  outputs: Record<string, string>
+}
 const BACKEND_API = '/apps/whisper-meeting/api'
 
 export default function WhisperMeeting() {
@@ -60,6 +97,9 @@ export default function WhisperMeeting() {
   const [selectedId, setSelectedId] = useState<string>()
   const [actionError, setActionError] = useState('')
   const [retryingSegmentId, setRetryingSegmentId] = useState<number>()
+  const [retryingAgentId, setRetryingAgentId] = useState<string>()
+  const [agentTab, setAgentTab] = useState<'notes' | 'sketch'>('notes')
+  const [meetingContext, setMeetingContext] = useState('')
   const capture = useSyncExternalStore(subscribeCapture, captureSnapshot)
 
   useEffect(() => {
@@ -97,6 +137,16 @@ export default function WhisperMeeting() {
     ),
     enabled: Boolean(selectedId),
   })
+  const agents = useQuery({
+    queryKey: ['meeting-agents', selectedId],
+    queryFn: () => api.get<AgentResult>(
+      `${BACKEND_API}/meetings/${encodeURIComponent(selectedId ?? '')}/agents`,
+    ),
+    enabled: Boolean(selectedId),
+    refetchInterval: query => agentSnapshotNeedsPolling(query.state.data?.agents ?? [])
+      ? 1000
+      : false,
+  })
   const installModel = useMutation({
     mutationFn: () => api.post<ModelResult>(`${BACKEND_API}/model/install`, {}),
     onSuccess: async () => {
@@ -111,6 +161,16 @@ export default function WhisperMeeting() {
       await queryClient.invalidateQueries({ queryKey: ['meetings'] })
     },
   })
+  const sendMeetingContext = useMutation({
+    mutationFn: (text: string) => api.post(
+      `${BACKEND_API}/meetings/${encodeURIComponent(selectedId ?? '')}/context`,
+      { text },
+    ),
+    onSuccess: async () => {
+      setMeetingContext('')
+      await queryClient.invalidateQueries({ queryKey: ['meeting-agents', selectedId] })
+    },
+  })
 
   useEffect(() => {
     if (!selectedId) return
@@ -121,6 +181,7 @@ export default function WhisperMeeting() {
       void queryClient.invalidateQueries({ queryKey: ['meetings'] })
       void queryClient.invalidateQueries({ queryKey: ['meeting', selectedId] })
       void queryClient.invalidateQueries({ queryKey: ['meeting-transcript', selectedId] })
+      void queryClient.invalidateQueries({ queryKey: ['meeting-agents', selectedId] })
     }
     return () => events.close()
   }, [queryClient, selectedId])
@@ -140,6 +201,7 @@ export default function WhisperMeeting() {
         queryClient.invalidateQueries({ queryKey: ['meetings'] }),
         queryClient.invalidateQueries({ queryKey: ['meeting', meetingId] }),
         queryClient.invalidateQueries({ queryKey: ['meeting-transcript', meetingId] }),
+        queryClient.invalidateQueries({ queryKey: ['meeting-agents', meetingId] }),
       ])
     } catch (error) {
       setActionError(error instanceof Error ? error.message : String(error))
@@ -199,10 +261,28 @@ export default function WhisperMeeting() {
     }
   }
 
+  async function retryAgent(agentId: string): Promise<void> {
+    if (!selectedId) return
+    setActionError('')
+    setRetryingAgentId(agentId)
+    try {
+      await api.post(
+        `${BACKEND_API}/meetings/${encodeURIComponent(selectedId)}`
+        + `/agents/${encodeURIComponent(agentId)}/retry`,
+        {},
+      )
+      await queryClient.invalidateQueries({ queryKey: ['meeting-agents', selectedId] })
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setRetryingAgentId(undefined)
+    }
+  }
+
   const rows = meetings.data?.meetings ?? []
   const recognitionFailure = rows.find(meeting => meeting.last_error)
   const error = meetings.error ?? model.error ?? createMeeting.error ?? installModel.error
-    ?? detail.error ?? transcript.error
+    ?? detail.error ?? transcript.error ?? agents.error ?? sendMeetingContext.error
   const errorMessage = error instanceof Error ? error.message : String(error ?? '')
 
   return (
@@ -405,68 +485,194 @@ export default function WhisperMeeting() {
 
         {selectedId ? (
           <Card className="mt-4">
-            <CardTitle>Transcript</CardTitle>
-            <div className="mt-3 flex gap-2">
-              <Btn onClick={() => void downloadExport(selectedId, 'markdown')}>
-                Export Markdown
-              </Btn>
-              <Btn onClick={() => void downloadExport(selectedId, 'text')}>
-                Export text
-              </Btn>
-              <Btn onClick={() => void downloadExport(selectedId, 'json')}>
-                Export JSON
-              </Btn>
-            </div>
-            {detail.data ? (
-              <>
-                <p className="text-sm text-muted mt-2">
-                  {detail.data.meeting.state} · {detail.data.progress.transcribed_chunks}/
-                  {detail.data.progress.chunks} chunks covered
-                  {` · ${detail.data.progress.pending_chunks} awaiting recognition`}
-                  {detail.data.operation ? ` · ${detail.data.operation.kind} ${detail.data.operation.state}` : ''}
-                </p>
-                {detail.data.meeting.last_error ? (
-                  <p className="text-sm text-danger mt-2">
-                    Recognition will retry without deleting audio: {detail.data.meeting.last_error}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>Meeting workspace</CardTitle>
+                {detail.data ? (
+                  <p className="text-sm text-muted mt-2">
+                    {detail.data.meeting.state} · {detail.data.progress.transcribed_chunks}/
+                    {detail.data.progress.chunks} chunks covered
+                    {` · ${detail.data.progress.pending_chunks} awaiting recognition`}
+                    {detail.data.operation
+                      ? ` · ${detail.data.operation.kind} ${detail.data.operation.state}`
+                      : ''}
                   </p>
                 ) : null}
-              </>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-muted">
+                {(agents.data?.agents ?? []).map(agent => (
+                  <span key={agent.agent_id} className="rounded-full border border-border px-2 py-1">
+                    {agent.agent_id === NOTE_AGENT ? 'Note Taker' : 'Sketch Artist'}:
+                    {' '}{agentStateLabel(agent, detail.data?.meeting.state)}
+                    {(() => {
+                      const queued = (agents.data?.dispatch_counts ?? [])
+                        .filter(row => row.agent_id === agent.agent_id && row.state === 'pending')
+                        .reduce((total, row) => total + row.count, 0)
+                      return queued ? ` · ${queued} queued` : ''
+                    })()}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {(agents.data?.agents ?? []).filter(agent => agent.state === 'failed').map(agent => (
+              <div
+                key={`${agent.agent_id}-failure`}
+                className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-danger/40 px-3 py-2"
+              >
+                <p className="text-sm text-danger">
+                  {agent.agent_id === NOTE_AGENT ? 'Note Taker' : 'Sketch Artist'} failed
+                  {agent.last_error ? `: ${agent.last_error}` : '.'}
+                  {' '}Transcription is unaffected.
+                </p>
+                <Btn
+                  onClick={() => void retryAgent(agent.agent_id)}
+                  disabled={retryingAgentId !== undefined}
+                >
+                  {retryingAgentId === agent.agent_id ? 'Retrying…' : 'Retry agent'}
+                </Btn>
+              </div>
+            ))}
+
+            {detail.data?.meeting.last_error ? (
+              <p className="text-sm text-danger mt-2">
+                Recognition will retry without deleting audio: {detail.data.meeting.last_error}
+              </p>
             ) : null}
-            <div className="mt-3 space-y-2">
-              {visibleTranscriptRows(transcript.data?.segments ?? []).map(row => (
-                row.kind === 'speech' ? (
-                  <div key={row.key}>
-                    {row.timestamp ? (
-                      <div className="mb-1 mt-4 text-xs font-medium tabular-nums text-muted">
-                        {row.timestamp}
-                      </div>
-                    ) : null}
-                    <p className="text-sm leading-relaxed text-text">{row.text}</p>
-                  </div>
-                ) : (
-                  <div
-                    key={row.key}
-                    className="flex items-center justify-between gap-3 rounded-md bg-muted/20 px-3 py-2"
-                  >
-                    <span className="text-xs text-muted">
-                      Silence covered
-                      {' · '}
-                      {(row.segment.audio_start_sample / 16000).toFixed(1)}–
-                      {(row.segment.audio_end_sample / 16000).toFixed(1)}s
-                    </span>
-                    <Btn
-                      onClick={() => void retryCoverage(row.segment.id)}
-                      disabled={retryingSegmentId !== undefined}
-                    >
-                      {retryingSegmentId === row.segment.id ? 'Retrying…' : 'Recognize again'}
+
+            <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
+              <section className="min-w-0">
+                <div className="flex gap-2 border-b border-border pb-2">
+                  <Btn onClick={() => setAgentTab('notes')} disabled={agentTab === 'notes'}>
+                    Notes
+                  </Btn>
+                  <Btn onClick={() => setAgentTab('sketch')} disabled={agentTab === 'sketch'}>
+                    Sketch
+                  </Btn>
+                  <Btn onClick={() => void downloadExport(selectedId, 'notes')}>Export notes</Btn>
+                  <Btn onClick={() => void downloadExport(selectedId, 'sketch')}>Export sketch</Btn>
+                  <Btn onClick={() => void downloadExport(selectedId, 'combined')}>Combined</Btn>
+                </div>
+                <div className="mt-3 min-h-64 rounded-md border border-border p-4">
+                  {agentTab === 'notes' ? (
+                    <MarkdownRenderer
+                      content={agents.data?.outputs[NOTE_AGENT] ?? '_Notes pending._'}
+                    />
+                  ) : (
+                    <div>
+                      <p className="text-xs text-muted mb-3">
+                        Sketch output is isolated with scripts, navigation, and network access disabled.
+                      </p>
+                      <iframe
+                        title="Meeting sketch"
+                        sandbox="allow-scripts"
+                        srcDoc={buildSketchSrcdoc(
+                          agents.data?.outputs[SKETCH_AGENT] ?? '<p>Sketch pending.</p>',
+                        )}
+                        className="h-[30rem] w-full rounded-md border border-border bg-surface"
+                      />
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="min-w-0 lg:border-l lg:border-border lg:pl-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-medium text-text">Transcript</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Btn onClick={() => void downloadExport(selectedId, 'markdown')}>
+                      Markdown
+                    </Btn>
+                    <Btn onClick={() => void downloadExport(selectedId, 'text')}>
+                      Text
+                    </Btn>
+                    <Btn onClick={() => void downloadExport(selectedId, 'json')}>
+                      JSON
                     </Btn>
                   </div>
-                )
-              ))}
-              {transcript.data && transcript.data.segments.length === 0 ? (
-                <p className="text-sm text-muted">No committed speech yet.</p>
-              ) : null}
+                </div>
+                <div className="mt-3 max-h-[32rem] space-y-2 overflow-y-auto pr-2">
+                  {visibleTranscriptRows(transcript.data?.segments ?? []).map(row => (
+                    row.kind === 'speech' ? (
+                      <div key={row.key}>
+                        {row.timestamp ? (
+                          <div className="mb-1 mt-4 text-xs font-medium tabular-nums text-muted">
+                            {row.timestamp}
+                          </div>
+                        ) : null}
+                        <p className="text-sm leading-relaxed text-text">{row.text}</p>
+                      </div>
+                    ) : (
+                      <div
+                        key={row.key}
+                        className="flex items-center justify-between gap-3 rounded-md bg-muted/20 px-3 py-2"
+                      >
+                        <span className="text-xs text-muted">
+                          Silence covered
+                          {' · '}
+                          {(row.segment.audio_start_sample / 16000).toFixed(1)}–
+                          {(row.segment.audio_end_sample / 16000).toFixed(1)}s
+                        </span>
+                        <Btn
+                          onClick={() => void retryCoverage(row.segment.id)}
+                          disabled={retryingSegmentId !== undefined}
+                        >
+                          {retryingSegmentId === row.segment.id
+                            ? 'Retrying…'
+                            : 'Recognize again'}
+                        </Btn>
+                      </div>
+                    )
+                  ))}
+                  {transcript.data && transcript.data.segments.length === 0 ? (
+                    <p className="text-sm text-muted">No committed speech yet.</p>
+                  ) : null}
+                </div>
+              </section>
             </div>
+
+            <section className="mt-5 border-t border-border pt-4">
+              <h3 className="font-medium text-text">Meeting Chat</h3>
+              <p className="mt-1 text-xs text-muted">
+                Add participants, agenda, terminology, or corrections. Messages go to both agents
+                and never rewrite the raw transcript.
+              </p>
+              {(agents.data?.context ?? []).length > 0 ? (
+                <div className="mt-3 max-h-32 space-y-2 overflow-y-auto">
+                  {agents.data?.context.map(event => (
+                    <div key={event.id} className="rounded-md bg-muted/20 px-3 py-2 text-sm">
+                      <span className="mr-2 text-xs text-muted">Typed · {fmtDateTime(event.created_at)}</span>
+                      {event.text}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-3 flex flex-col gap-2 md:flex-row">
+                <Input
+                  value={meetingContext}
+                  onChange={event => setMeetingContext(event.target.value)}
+                  placeholder="Tell the meeting participants, agenda, or a correction…"
+                  aria-label="Meeting context"
+                  maxLength={4000}
+                  disabled={detail.data?.meeting.state !== 'recording'}
+                />
+                <Btn
+                  onClick={() => sendMeetingContext.mutate(meetingContext.trim())}
+                  disabled={
+                    detail.data?.meeting.state !== 'recording'
+                    || !meetingContext.trim()
+                    || sendMeetingContext.isPending
+                  }
+                >
+                  {sendMeetingContext.isPending ? 'Sending…' : 'Send'}
+                </Btn>
+              </div>
+              {detail.data?.meeting.state !== 'recording' ? (
+                <p className="mt-2 text-xs text-muted">
+                  Meeting Chat is available while recording.
+                </p>
+              ) : null}
+            </section>
           </Card>
         ) : null}
       </div>

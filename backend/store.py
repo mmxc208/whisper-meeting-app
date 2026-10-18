@@ -15,7 +15,7 @@ from typing import Any
 
 from backend.chunks import AudioSpool, ChunkMetadata
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 MIN_FREE_BYTES = 5 * 1024 * 1024 * 1024
 SPOOL_CAP_BYTES = 2 * 1024 * 1024 * 1024
 RAW_AUDIO_RETENTION_DAYS = 7
@@ -128,6 +128,10 @@ class MeetingStore:
             if current < 6:
                 self._migrate_to_v6(connection)
                 connection.execute("PRAGMA user_version = 6")
+                current = 6
+            if current < 7:
+                self._migrate_to_v7(connection)
+                connection.execute("PRAGMA user_version = 7")
             connection.execute(
                 "UPDATE audio_chunks SET state = 'durable' WHERE state = 'recognizing'"
             )
@@ -1665,5 +1669,64 @@ class MeetingStore:
                   WHERE segments.meeting_id = chunks.meeting_id
                     AND segments.coverage_kind = 'silence'
               )
+            """
+        )
+
+    @staticmethod
+    def _migrate_to_v7(connection: sqlite3.Connection) -> None:
+        connection.executescript(
+            """
+            CREATE TABLE meeting_agent_state (
+                meeting_id TEXT NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+                agent_id TEXT NOT NULL,
+                execution_mode TEXT NOT NULL DEFAULT '',
+                execution_ref TEXT NOT NULL DEFAULT '',
+                state TEXT NOT NULL DEFAULT 'pending' CHECK (
+                    state IN (
+                        'pending', 'working', 'caught_up', 'finalizing',
+                        'complete', 'unavailable', 'failed'
+                    )
+                ),
+                delivered_through_segment_id INTEGER NOT NULL DEFAULT 0,
+                output_revision INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (meeting_id, agent_id)
+            );
+
+            CREATE TABLE meeting_context_events (
+                id TEXT PRIMARY KEY,
+                meeting_id TEXT NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE INDEX meeting_context_timeline
+                ON meeting_context_events (meeting_id, created_at, id);
+
+            CREATE TABLE meeting_agent_dispatches (
+                id TEXT PRIMARY KEY,
+                meeting_id TEXT NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+                agent_id TEXT NOT NULL,
+                kind TEXT NOT NULL CHECK (kind IN ('speech', 'chat', 'finalize')),
+                first_segment_id INTEGER,
+                last_segment_id INTEGER,
+                context_event_id TEXT REFERENCES meeting_context_events(id) ON DELETE CASCADE,
+                payload_text TEXT NOT NULL,
+                payload_hash TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'pending' CHECK (
+                    state IN ('pending', 'accepted', 'running', 'complete', 'failed')
+                ),
+                execution_ref TEXT NOT NULL DEFAULT '',
+                attempt_count INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE INDEX meeting_agent_dispatch_queue
+                ON meeting_agent_dispatches (state, created_at, id);
+            CREATE INDEX meeting_agent_dispatch_timeline
+                ON meeting_agent_dispatches (meeting_id, agent_id, created_at, id);
             """
         )

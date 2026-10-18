@@ -1,0 +1,6 @@
+Whisper Meeting agent prompts and the isolated Sketch srcdoc architecture are
+adapted from KiroCrew's built-in Meetings app, including its Note Taker, Sketch
+Artist, OUTPUT_FILE contract, and host-vendored Mermaid approach.
+
+KiroCrew is licensed under the Apache License, Version 2.0.
+Source: https://github.com/kirocrew/kirocrew

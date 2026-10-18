@@ -15,9 +15,11 @@ from urllib.parse import parse_qs, unquote, urlsplit
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from backend.agent_coordinator import AgentCoordinator
+from backend.agent_ledger import AgentLedger
 from backend.auth import ProxyAuthenticator, RequestIdentity
 from backend.chunks import ChunkMetadata
-from backend.exporter import SUPPORTED_EXPORTS, export_transcript
+from backend.exporter import SUPPORTED_EXPORTS, export_agent_artifact, export_transcript
 from backend.model import ModelManager
 from backend.recognition import RecognitionScheduler
 from backend.store import (
@@ -40,6 +42,9 @@ _EVENTS_ROUTE = re.compile(r"^/api/meetings/([^/]+)/events$")
 _EXPORT_ROUTE = re.compile(r"^/api/meetings/([^/]+)/export$")
 _MEETING_ROUTE = re.compile(r"^/api/meetings/([^/]+)$")
 _RETRY_SEGMENT_ROUTE = re.compile(r"^/api/meetings/([^/]+)/segments/([0-9]+)/retry$")
+_AGENTS_ROUTE = re.compile(r"^/api/meetings/([^/]+)/agents$")
+_AGENT_RETRY_ROUTE = re.compile(r"^/api/meetings/([^/]+)/agents/([^/]+)/retry$")
+_CONTEXT_ROUTE = re.compile(r"^/api/meetings/([^/]+)/context$")
 _AUDIO_ROUTE = re.compile(r"^/api/meetings/([^/]+)/audio/([0-9]+)/([0-9]+)$")
 
 
@@ -56,11 +61,15 @@ class WhisperMeetingServer(ThreadingHTTPServer):
         authenticator: ProxyAuthenticator,
         models: ModelManager | None = None,
         scheduler: RecognitionScheduler | None = None,
+        agent_ledger: AgentLedger | None = None,
+        agent_coordinator: Any | None = None,
     ) -> None:
         self.store = store
         self.authenticator = authenticator
         self.models = models
         self.scheduler = scheduler
+        self.agent_ledger = agent_ledger
+        self.agent_coordinator = agent_coordinator
         super().__init__(server_address, WhisperMeetingHandler)
 
 
@@ -99,6 +108,28 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
                 {"meetings": self.server.store.list_meetings(owner_id=identity.owner_id)},
             )
             return
+        agents_match = _AGENTS_ROUTE.fullmatch(route)
+        if agents_match is not None:
+            if self.server.agent_ledger is None:
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "agents_unavailable",
+                    "meeting agents are unavailable",
+                )
+                return
+            meeting_id = unquote(agents_match.group(1))
+            try:
+                snapshot = self.server.agent_ledger.snapshot(
+                    meeting_id=meeting_id, owner_id=identity.owner_id
+                )
+            except MeetingNotFound:
+                self._error(HTTPStatus.NOT_FOUND, "meeting_not_found", "meeting not found")
+                return
+            except InvalidMeeting as exc:
+                self._error(HTTPStatus.CONFLICT, "agent_output_unavailable", str(exc))
+                return
+            self._json(HTTPStatus.OK, snapshot)
+            return
         events_match = _EVENTS_ROUTE.fullmatch(route)
         if events_match is not None:
             meeting_id = unquote(events_match.group(1))
@@ -112,20 +143,43 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
                 self._error(
                     HTTPStatus.BAD_REQUEST,
                     "invalid_export_format",
-                    "export format must be markdown, text or json",
+                    "unsupported export format",
                 )
                 return
             try:
                 meeting = self.server.store.get_meeting(
                     meeting_id=meeting_id, owner_id=identity.owner_id
                 )
-                document = export_transcript(
-                    meeting=meeting,
-                    segments=self.server.store.transcript(
+                if format_name in {"notes", "sketch", "combined"}:
+                    if self.server.agent_ledger is None:
+                        self._error(
+                            HTTPStatus.SERVICE_UNAVAILABLE,
+                            "agents_unavailable",
+                            "meeting agents are unavailable",
+                        )
+                        return
+                    snapshot = self.server.agent_ledger.snapshot(
                         meeting_id=meeting_id, owner_id=identity.owner_id
-                    ),
-                    format_name=format_name,
-                )
+                    )
+                    document = export_agent_artifact(
+                        meeting=meeting, snapshot=snapshot, format_name=format_name
+                    )
+                else:
+                    snapshot = (
+                        self.server.agent_ledger.snapshot(
+                            meeting_id=meeting_id, owner_id=identity.owner_id
+                        )
+                        if self.server.agent_ledger is not None
+                        else {"context": []}
+                    )
+                    document = export_transcript(
+                        meeting=meeting,
+                        segments=self.server.store.transcript(
+                            meeting_id=meeting_id, owner_id=identity.owner_id
+                        ),
+                        format_name=format_name,
+                        context=snapshot["context"],
+                    )
             except MeetingNotFound:
                 self._error(HTTPStatus.NOT_FOUND, "meeting_not_found", "meeting not found")
                 return
@@ -187,6 +241,66 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
                 )
                 return
             self._json(HTTPStatus.ACCEPTED, {"model": self.server.models.start_install()})
+            return
+        agent_retry_match = _AGENT_RETRY_ROUTE.fullmatch(route)
+        if agent_retry_match is not None:
+            if self.server.agent_ledger is None:
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "agents_unavailable",
+                    "meeting agents are unavailable",
+                )
+                return
+            try:
+                count = self.server.agent_ledger.retry_failed(
+                    meeting_id=unquote(agent_retry_match.group(1)),
+                    owner_id=identity.owner_id,
+                    agent_id=unquote(agent_retry_match.group(2)),
+                )
+            except MeetingNotFound:
+                self._error(HTTPStatus.NOT_FOUND, "meeting_not_found", "meeting not found")
+                return
+            except InvalidMeeting as exc:
+                self._error(HTTPStatus.CONFLICT, "agent_retry_unavailable", str(exc))
+                return
+            if self.server.agent_coordinator is not None:
+                self.server.agent_coordinator.notify()
+            self._json(HTTPStatus.ACCEPTED, {"retried": count})
+            return
+        context_match = _CONTEXT_ROUTE.fullmatch(route)
+        if context_match is not None:
+            if self.server.agent_ledger is None:
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "agents_unavailable",
+                    "meeting agents are unavailable",
+                )
+                return
+            try:
+                payload = json.loads(body or b"{}")
+                if not isinstance(payload, dict) or not isinstance(payload.get("text"), str):
+                    raise ValueError
+                event = self.server.agent_ledger.append_context(
+                    meeting_id=unquote(context_match.group(1)),
+                    owner_id=identity.owner_id,
+                    text=payload["text"],
+                )
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+                self._error(
+                    HTTPStatus.BAD_REQUEST,
+                    "invalid_meeting_context",
+                    "text must be a string",
+                )
+                return
+            except MeetingNotFound:
+                self._error(HTTPStatus.NOT_FOUND, "meeting_not_found", "meeting not found")
+                return
+            except InvalidMeeting as exc:
+                self._error(HTTPStatus.CONFLICT, "meeting_context_unavailable", str(exc))
+                return
+            if self.server.agent_coordinator is not None:
+                self.server.agent_coordinator.notify()
+            self._json(HTTPStatus.CREATED, {"context": event})
             return
         retry_match = _RETRY_SEGMENT_ROUTE.fullmatch(route)
         if retry_match is not None:
@@ -282,6 +396,8 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
                 return
             if self.server.scheduler is not None:
                 self.server.scheduler.notify()
+            if self.server.agent_coordinator is not None:
+                self.server.agent_coordinator.notify()
             status = HTTPStatus.OK if operation["state"] == "complete" else HTTPStatus.ACCEPTED
             self._json(status, {"operation": operation})
             return
@@ -308,6 +424,10 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
         except InvalidMeeting as exc:
             self._error(HTTPStatus.BAD_REQUEST, "invalid_meeting", str(exc))
             return
+        if self.server.agent_ledger is not None:
+            self.server.agent_ledger.initialize_outputs(
+                meeting_id=str(meeting["id"]), owner_id=identity.owner_id
+            )
         self._json(HTTPStatus.CREATED, {"meeting": meeting})
 
     def do_PUT(self) -> None:
@@ -497,12 +617,19 @@ class WhisperMeetingHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     port = int(os.environ["PORT"])
+    crew_home = Path(os.environ["KIROCREW_HOME"])
     store = MeetingStore(app_data_dir())
     store.initialize()
     store.reconcile_spool()
     models = ModelManager(store.data_dir, store)
     models.reconcile()
     scheduler = RecognitionScheduler(store, models)
+    agent_ledger = AgentLedger(store.data_dir)
+    agent_coordinator = AgentCoordinator(
+        agent_ledger,
+        app_name=APP_NAME,
+        crew_home=crew_home,
+    )
     models.set_ready_callback(scheduler.notify)
     scheduler.start()
     server = WhisperMeetingServer(
@@ -511,11 +638,15 @@ def main() -> None:
         authenticator=ProxyAuthenticator(),
         models=models,
         scheduler=scheduler,
+        agent_ledger=agent_ledger,
+        agent_coordinator=agent_coordinator,
     )
+    agent_coordinator.start()
     print(f"{APP_NAME} backend listening on 127.0.0.1:{port}", flush=True)
     try:
         server.serve_forever()
     finally:
+        agent_coordinator.close()
         scheduler.close()
 
 

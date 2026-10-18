@@ -438,6 +438,9 @@ def test_v6_requeues_retained_silence_for_real_decode(tmp_path: Path) -> None:
     assert second_job is not None
     store.complete_recognition(job=second_job, segments=[], language="", coverage_kind="silence")
     with store._connect() as connection:
+        connection.execute("DROP TABLE meeting_agent_dispatches")
+        connection.execute("DROP TABLE meeting_context_events")
+        connection.execute("DROP TABLE meeting_agent_state")
         connection.execute("PRAGMA user_version = 5")
         connection.commit()
 
@@ -445,7 +448,7 @@ def test_v6_requeues_retained_silence_for_real_decode(tmp_path: Path) -> None:
     reopened.initialize()
     reopened.reconcile_spool()
 
-    assert reopened.schema_version() == 6
+    assert reopened.schema_version() == SCHEMA_VERSION
     pending = reopened.pending_recognition_group()
     assert len(pending) == 2
     assert {row["force_decode"] for row in pending} == {1}
@@ -481,11 +484,19 @@ def test_retention_removes_only_expired_ended_pcm(tmp_path: Path) -> None:
     assert job is not None
     store.complete_recognition(job=job, segments=[], language="", coverage_kind="silence")
     assert len(store._spool.iter_objects()) == 1
+    agent_dir = store.data_dir / "sessions" / MEETING_ID / "agents"
+    note_output = agent_dir / "note-taker.md"
+    sketch_output = agent_dir / "sketch-artist.html"
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    note_output.write_text("# Retained notes\n", encoding="utf-8")
+    sketch_output.write_text("<!doctype html><p>Retained sketch</p>\n", encoding="utf-8")
 
     current[0] = "2026-10-09T12:00:00.000+00:00"
     assert store.enforce_audio_retention() == 1
 
     assert store._spool.iter_objects() == []
+    assert note_output.read_text(encoding="utf-8") == "# Retained notes\n"
+    assert sketch_output.read_text(encoding="utf-8") == ("<!doctype html><p>Retained sketch</p>\n")
     transcript = store.transcript(meeting_id=MEETING_ID, owner_id="owner-a")
     assert transcript[0]["coverage_kind"] == "silence"
     with store._connect() as connection:

@@ -31,6 +31,7 @@ declare module '@kirocrew/app-sdk/ui' {
     askAgent?: boolean
   }>
   export const Input: ComponentType<InputHTMLAttributes<HTMLInputElement>>
+  export const MarkdownRenderer: ComponentType<{ content: string }>
   export const PageHeader: ComponentType<{ title: string; subtitle?: string }>
   export const StatCard: ComponentType<{
     label: string

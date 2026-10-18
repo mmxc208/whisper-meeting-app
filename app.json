@@ -1,6 +1,6 @@
 {
   "name": "whisper-meeting",
-  "version": "0.1.6",
+  "version": "0.2.3",
   "displayName": "Whisper Meeting",
   "description": "Durable local meeting transcription for Apple Silicon Macs",
   "author": "KiroCrew contributors",
@@ -29,12 +29,16 @@
     "signedPrincipal": true
   },
   "permissions": {
-    "api": ["/apps/whisper-meeting/api"]
+    "api": ["/apps/whisper-meeting/api", "/api/spawn"]
   },
   "platform": {
     "os": ["macos"],
     "arch": ["arm64"],
     "requiresDesktopApp": true,
     "installMode": "server"
-  }
+  },
+  "agents": [
+    "agents/whisper-meeting-note-taker.json",
+    "agents/whisper-meeting-sketch-artist.json"
+  ]
 }

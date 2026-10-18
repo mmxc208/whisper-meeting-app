@@ -1,0 +1,109 @@
+{
+  "app": "whisper-meeting",
+  "app_version": "0.2.3",
+  "configured_backend": "claude",
+  "decision": {
+    "direct_output": "go",
+    "execution_mode": "stateless_spawn",
+    "phase_a_complete": true,
+    "production_coordinator_enabled": true
+  },
+  "grants": {
+    "approved": [
+      "/apps/whisper-meeting/api",
+      "/api/spawn"
+    ],
+    "undeclared_slot_api_status": 403
+  },
+  "host_version": "0.10.0-insider.4",
+  "outputs": {
+    "note": {
+      "bytes": 732,
+      "exists": true
+    },
+    "sketch": {
+      "bytes": 2532,
+      "exists": true,
+      "sanitizer": {
+        "connect_src_none": true,
+        "default_src_none": true,
+        "mermaid_source_preserved": true,
+        "remote_urls_absent": true,
+        "scripts_absent": true
+      }
+    }
+  },
+  "privacy": {
+    "audio_sent_to_provider": false,
+    "historical_meetings_dispatched": 0,
+    "synthetic_transcript_sent_to_configured_provider": true
+  },
+  "probe_id": "probe-f0aa3ce9-504c-4f7c-9acd-6725c2ebb4e1",
+  "schema": 1,
+  "stateless_spawn": {
+    "concurrent_agents": 2,
+    "elapsed_seconds": 60.491,
+    "outputs_written": 2,
+    "tasks_done": 2,
+    "tasks_made_tool_calls": 2
+  },
+  "restart_qualification": {
+    "agent_tasks": 2,
+    "attempt_count_after_recovery": 2,
+    "dispatch_ids_reused": true,
+    "duplicate_output_markers": 0,
+    "gateway_restart_count": 1,
+    "historical_agent_state_rows_after_cleanup": 0,
+    "historical_dispatch_rows_after_cleanup": 0,
+    "historical_meetings_after_cleanup": 9,
+    "note_bytes": 659,
+    "production_approval_mode": "auto",
+    "sketch_bytes": 2003,
+    "tasks_complete": 2
+  },
+  "first_live_meeting": {
+    "agent_dispatches_complete_per_agent": 10,
+    "agent_output_revision": 10,
+    "captured_chunks": 485,
+    "final_segment_id": 2099,
+    "issues_found": [
+      "localhost_app_token_cookie_not_returned",
+      "agent_snapshot_not_refreshed_after_background_completion"
+    ],
+    "meeting_id": "0be7d03a-7f94-44b5-8e11-cff7acc13590",
+    "note_taker_complete": true,
+    "pause_resume_exercised": false,
+    "sketch_artist_complete": true,
+    "transcript_chunks_covered": 485
+  },
+  "gateway_token_recovery_meeting": {
+    "agent_dispatches_complete_per_agent": 5,
+    "agent_output_revision": 5,
+    "captured_chunks": 754,
+    "final_segment_id": 2120,
+    "initial_error": "gateway returned HTTP 403 after the app-scoped gateway session expired",
+    "meeting_id": "a0bacd08-68f2-47c1-bd64-47ab7c3311bc",
+    "note_taker_complete": true,
+    "same_dispatch_retried": true,
+    "sketch_artist_complete": true,
+    "transcript_chunks_covered": 754,
+    "ui_caught_up_observed": true
+  },
+  "verified": {
+    "agent_materialization": true,
+    "direct_app_owned_file_write": true,
+    "gateway_restart_recovery": true,
+    "gateway_token_expiry_reauthentication": true,
+    "historical_backfill_blocked": true,
+    "live_agent_snapshot_polling": true,
+    "localhost_app_token_callback": true,
+    "markdown_renderer_export": true,
+    "pcm_retention_preserves_agent_outputs": true,
+    "production_coordinator_enabled": true,
+    "restart_output_idempotent": true,
+    "sketch_iframe_observed_about_srcdoc": true,
+    "sketch_null_origin_csp": true,
+    "undeclared_api_rejected": true,
+    "workspace_ui_loaded_after_reload": true
+  }
+}
