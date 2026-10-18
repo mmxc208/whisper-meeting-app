@@ -1,0 +1,40 @@
+{
+  "name": "whisper-meeting",
+  "version": "0.1.6",
+  "displayName": "Whisper Meeting",
+  "description": "Durable local meeting transcription for Apple Silicon Macs",
+  "author": "KiroCrew contributors",
+  "license": "Apache-2.0",
+  "minKiroCrewVersion": "0.10.0",
+  "tags": ["meeting", "transcription", "whisper", "local"],
+  "highlights": [
+    "Durable local-first meeting records",
+    "Local Whisper transcription with no cloud audio upload",
+    "Independent from Meetings and Chat Dictation"
+  ],
+  "ui": {
+    "entry": "dist/index.mjs",
+    "pages": [
+      {
+        "route": "/apps/whisper-meeting",
+        "label": "Whisper Meeting",
+        "icon": "Mic"
+      }
+    ]
+  },
+  "backend": {
+    "entryPoint": "backend/server.py",
+    "port": "auto",
+    "healthCheck": "/health",
+    "signedPrincipal": true
+  },
+  "permissions": {
+    "api": ["/apps/whisper-meeting/api"]
+  },
+  "platform": {
+    "os": ["macos"],
+    "arch": ["arm64"],
+    "requiresDesktopApp": true,
+    "installMode": "server"
+  }
+}

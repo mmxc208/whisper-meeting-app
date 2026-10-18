@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-17T12:15:26Z",
+  "source_workload": {
+    "audio_seconds_per_model": 3600,
+    "window_seconds": 30,
+    "windows_per_model": 120,
+    "execution": "continuous accelerated decode with no real-time idle gaps"
+  },
+  "models": [
+    {
+      "model": "small",
+      "real_time_factor": 0.01879557088227658,
+      "first_quarter_real_time_factor": 0.018178703610837045,
+      "last_quarter_real_time_factor": 0.01909843324528386,
+      "last_to_first_ratio": 1.0505937966829784,
+      "continuous_decode_wall_seconds": 67.99072545801755,
+      "thermal_samples": [
+        {"after_window": 0, "state": "nominal"},
+        {"after_window": 30, "state": "nominal"},
+        {"after_window": 60, "state": "nominal"},
+        {"after_window": 90, "state": "nominal"},
+        {"after_window": 120, "state": "nominal"}
+      ]
+    },
+    {
+      "model": "large-v3-turbo",
+      "real_time_factor": 0.04671781916617571,
+      "first_quarter_real_time_factor": 0.04916412129920597,
+      "last_quarter_real_time_factor": 0.04440057967750666,
+      "last_to_first_ratio": 0.90310939164947,
+      "continuous_decode_wall_seconds": 168.81813279201742,
+      "thermal_samples": [
+        {"after_window": 0, "state": "nominal"},
+        {"after_window": 30, "state": "nominal"},
+        {"after_window": 60, "state": "nominal"},
+        {"after_window": 90, "state": "nominal"},
+        {"after_window": 120, "state": "nominal"}
+      ]
+    }
+  ],
+  "finding": "Both models stayed far ahead of real time. macOS ProcessInfo remained nominal at every sample; large-v3-turbo's final-quarter RTF was lower than its first-quarter RTF."
+}

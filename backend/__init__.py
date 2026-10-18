@@ -1,0 +1,1 @@
+"""Whisper Meeting backend package."""

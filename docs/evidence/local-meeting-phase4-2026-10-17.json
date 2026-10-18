@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T13:39:53Z",
+  "scope": "Phase 4 deterministic drain, recovery and UI validation",
+  "drain_contract": {
+    "states": [
+      "recording",
+      "draining",
+      "paused",
+      "ended"
+    ],
+    "terminal_condition": "every chunk through the cut sequence is transcript-covered",
+    "gap_policy": "reject the operation before closing the capture epoch",
+    "late_new_chunk_policy": "reject after the epoch is stopped; exact duplicate remains idempotent",
+    "short_tail_policy": "force the remaining bounded VAD window after Pause or End"
+  },
+  "recovery": {
+    "browser_queue": "concurrent drain callers await the same active upload and exact durable ACK",
+    "page_reload": "history exposes an interrupted recording and Recover & pause drains IndexedDB before fixing the backend cut point",
+    "backend_restart": "running recognition claims return to durable and the stored operation reaches paused after retry",
+    "recognition_error": "source chunks remain durable and last_error plus an SSE event expose the failure"
+  },
+  "sse": {
+    "heartbeat_seconds": 30,
+    "replay": "monotonic event id with cursor and Last-Event-ID support",
+    "route_test": "signed HTTP stream replayed capture.started after the supplied cursor"
+  },
+  "ui": {
+    "commands": [
+      "Pause",
+      "Resume",
+      "End",
+      "Recover & pause"
+    ],
+    "nonterminal_phases": [
+      "stopping",
+      "uploading",
+      "transcribing",
+      "recovering"
+    ],
+    "transcript": "committed non-empty segments only",
+    "reload_warning": "active capture or queued browser PCM registers beforeunload"
+  },
+  "validation": {
+    "backend_tests": 33,
+    "benchmark_regression_tests": 7,
+    "ui_tests": 11,
+    "python_mypy": "passed",
+    "python_flake8": "passed",
+    "typescript_typecheck": "passed",
+    "ui_production_build": "passed"
+  }
+}

@@ -1,0 +1,22 @@
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = "-q"
+timeout = 120
+
+[tool.mypy]
+python_version = "3.12"
+explicit_package_bases = true
+check_untyped_defs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["_pywhispercpp", "pywhispercpp", "pywhispercpp.*"]
+ignore_missing_imports = true

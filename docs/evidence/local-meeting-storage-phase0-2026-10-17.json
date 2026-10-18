@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-17T12:07:20Z",
+  "format": {
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "encoding": "pcm_s16le"
+  },
+  "budget": {
+    "bytes_per_second": 32000,
+    "chunk_bytes": 16000,
+    "chunks_per_hour": 7200,
+    "raw_bytes_per_hour": 115200000,
+    "raw_mib_per_hour": 109.86328125,
+    "browser_cap_raw_hours": 4.6603377777777775,
+    "backend_cap_raw_hours": 18.64135111111111
+  },
+  "policy": {
+    "browser_queue_cap_bytes": 536870912,
+    "backend_spool_cap_bytes": 2147483648,
+    "minimum_free_disk_reserve_bytes": 5368709120
+  },
+  "measurement": {
+    "recognizer_state": "deliberately_stalled",
+    "capture_completed": true,
+    "hours": 2.0,
+    "chunk_seconds": 0.5,
+    "chunk_count": 14400,
+    "chunk_bytes": 16000,
+    "audio_seconds": 7200.0,
+    "wall_seconds": 3.3047204159665853,
+    "ledger_rows": 14400,
+    "contiguous_through_sequence": 14399,
+    "spool_files": 14400,
+    "apparent_bytes": 232214528,
+    "allocated_bytes": 238047232,
+    "allocated_mib_per_audio_hour": 113.509765625,
+    "filesystem_overhead_ratio": 1.0331911111111112
+  },
+  "disk_free_before_bytes": 295731200000,
+  "disk_free_after_write_bytes": 295731200000
+}

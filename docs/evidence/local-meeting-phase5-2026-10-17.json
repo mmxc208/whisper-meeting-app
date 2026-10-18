@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T14:29:10Z",
+  "scope": "Phase 5 export, retention, packaging and automated release qualification",
+  "release_archive": {
+    "name": "whisper-meeting-0.1.0.tar.gz",
+    "bytes": 34797,
+    "sha256": "2546752d5068559dcb25e25edca9647636b8a1b9aa5f9935fb640084f7d4a377",
+    "runtime_files": 15,
+    "deterministic_second_build": true,
+    "source_checkout_required_after_extraction": false,
+    "standalone_repository": true
+  },
+  "exports": {
+    "formats": [
+      "markdown",
+      "text",
+      "json"
+    ],
+    "committed_final_segments_only": true,
+    "json_schema_version": 1
+  },
+  "retention": {
+    "raw_pcm_policy": "delete only after transcript coverage commits; keep the latest covered active-epoch chunk for bounded recognition overlap",
+    "recognition_failure_retains_pcm": true,
+    "meeting_delete_requires_ui_confirmation": true,
+    "active_or_draining_delete_refused": true,
+    "delete_recovery": "a pre-commit interruption restores the quarantined tree; a post-commit interruption finishes cleanup at startup"
+  },
+  "accelerated_two_hour_soak": {
+    "audio_hours": 2.0,
+    "sample_rate": 16000,
+    "channels": 1,
+    "chunks": 240,
+    "samples": 115200000,
+    "bytes_before_drain": 230400000,
+    "recognition_jobs": 240,
+    "transcript_rows": 240,
+    "covered_through_sample": 115200000,
+    "terminal_state": "ended",
+    "pending_chunks": 0,
+    "spool_bytes_after_drain": 0,
+    "spool_objects_after_drain": 0,
+    "events": 244,
+    "database_bytes": 323584,
+    "elapsed_seconds": 4.877
+  },
+  "fault_matrix": [
+    {
+      "fault": "browser connection reset or timeout",
+      "result": "IndexedDB PCM remains queued and the same chunk retries",
+      "evidence": "ui/test/uploader.test.ts"
+    },
+    {
+      "fault": "durable ACK mismatch",
+      "result": "IndexedDB PCM remains queued and the action reports an error",
+      "evidence": "ui/test/uploader.test.ts"
+    },
+    {
+      "fault": "duplicate or conflicting chunk delivery",
+      "result": "exact duplicate is idempotent; different content is rejected",
+      "evidence": "backend/test_store.py and backend/test_server.py"
+    },
+    {
+      "fault": "backend exits after spool publication and before ledger commit",
+      "result": "startup reconciliation adopts the published object",
+      "evidence": "backend/test_store.py"
+    },
+    {
+      "fault": "recognition worker exits",
+      "result": "claim returns to durable, PCM remains, last_error and recognition.interrupted event persist",
+      "evidence": "backend/test_recognition.py"
+    },
+    {
+      "fault": "backend restarts with an active recognition claim or drain",
+      "result": "claim is released and the saved drain reaches its terminal state on retry",
+      "evidence": "backend/test_recognition.py"
+    },
+    {
+      "fault": "browser or backend storage cap",
+      "result": "the next write is refused without evicting older audio",
+      "evidence": "ui/test/captureQueue.test.ts and backend/test_store.py"
+    },
+    {
+      "fault": "meeting deletion interrupted around database commit",
+      "result": "startup restores the tree before commit or finishes file cleanup after commit",
+      "evidence": "backend/test_store.py"
+    }
+  ],
+  "clean_install_update_restart": {
+    "isolated_home": true,
+    "third_party_execution_explicitly_enabled": true,
+    "host_version": "0.10.0-insider.4",
+    "minimum_host_version": "0.10.0",
+    "archive_installed_and_enabled": true,
+    "requirements_provisioned": "pywhispercpp 1.5.1 in the app-owned dependency directory",
+    "provisioned_native_backend": "metal",
+    "provisioned_native_backend_evidence": "whisper_backend_init_gpu selected MTL0 on Apple M4 Pro",
+    "gateway_backend_bound_loopback": true,
+    "ui_bundle_status": 200,
+    "audio_worklet_status": 200,
+    "meeting_create_status": 201,
+    "backend_port_before_update": 9100,
+    "backend_port_after_update": 9101,
+    "record_preserved_after_update": true,
+    "record_preserved_after_gateway_restart": true
+  },
+  "live_desktop_smoke": {
+    "host_version": "0.10.0-insider.4",
+    "ui_loaded_after_removing_the_runtime_lucide_dependency": true,
+    "model_status": "ready",
+    "capture_status": "ended",
+    "chunks_covered": 64,
+    "chunks_total": 64,
+    "queued_chunks_after_end": 0,
+    "end_operation": "complete",
+    "recognition_jobs_complete": 16,
+    "recognition_job_errors": 0,
+    "nonempty_transcript_segments": 0,
+    "input_note": "macOS say output was not routed into the selected microphone; captured PCM was silence, so this smoke qualifies create/capture/drain/end but not speech accuracy"
+  },
+  "privacy": {
+    "capture_and_recognition_socket_guard_attempts": 0,
+    "capture_and_recognition_url_open_attempts": 0,
+    "installed_backend_socket_inventory": [
+      "TCP 127.0.0.1:9101 LISTEN",
+      "TCP 127.0.0.1:9101 to 127.0.0.1 gateway connection"
+    ],
+    "runtime_external_url_allowlist": [
+      "pinned model setup URL"
+    ],
+    "packet_capture_field_test": "pending"
+  },
+  "validation": {
+    "python_tests": 52,
+    "ui_tests": 11,
+    "python_flake8": "passed",
+    "python_mypy_macos": "passed",
+    "typescript_typecheck": "passed",
+    "ui_production_build": "passed",
+    "npm_production_audit_high": "0 vulnerabilities"
+  },
+  "release_qualification": {
+    "automated_phase5_checks": "passed",
+    "fully_releasable": false,
+    "remaining": [
+      "two-hour wall-clock browser capture field run",
+      "process-attributed packet capture during real recording and Metal recognition"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-17T12:08:27Z",
+  "result": {
+    "content_type": "text/event-stream",
+    "ordinary_proxy_timeout_seconds": 30,
+    "event_stream_idle_timeout_seconds": 60,
+    "heartbeat_interval_seconds": 30.0,
+    "heartbeat_count": 3,
+    "elapsed_seconds": 60.00423233397305,
+    "heartbeats": [
+      {
+        "comment": ": heartbeat 0",
+        "elapsed_seconds": 0.0024557500146329403
+      },
+      {
+        "comment": ": heartbeat 1",
+        "elapsed_seconds": 30.00340491696261
+      },
+      {
+        "comment": ": heartbeat 2",
+        "elapsed_seconds": 60.00423233397305
+      }
+    ],
+    "survived_idle_timeout_boundary": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-17T13:21:00Z",
+  "host": {
+    "chip": "Apple M4 Pro",
+    "architecture": "arm64",
+    "macos": "27.0.1"
+  },
+  "runtime": {
+    "python": "3.12.15",
+    "provider": "pywhispercpp",
+    "native_backend_evidence": "whisper_backend_init_gpu: using MTL0 backend"
+  },
+  "model": {
+    "id": "large-v3-turbo",
+    "bytes": 1624555275,
+    "sha256": "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
+    "ownership": "verified copy under app data/models",
+    "self_test": "passed"
+  },
+  "resident_worker_fixtures": {
+    "zh": "今天我们测试本地会议转录,项目进度正常,下一步检查音频是否完整。",
+    "en": "Today we are testing local meeting transcription. The next step is to verify that every audio chunk is complete."
+  },
+  "durable_pipeline": {
+    "vad_jobs": 2,
+    "input": "500 ms pcm_s16le chunks with one-second pause boundaries",
+    "committed_nonempty_segments": [
+      "今天我们测试本地会议转录,项目进度正常,下一步检查音频是否完整。",
+      "Today we are testing local meeting transcription.",
+      "The next step is to verify that every audio chunk is complete."
+    ],
+    "sample_coverage": "contiguous",
+    "ordering": "capture epoch then absolute sample position"
+  },
+  "gateway": {
+    "schema_version": 4,
+    "model_status_route": 200,
+    "record_without_ready_model": 409,
+    "record_refusal_code": "model_not_ready"
+  }
+}

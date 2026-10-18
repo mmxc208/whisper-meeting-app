@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "status": "phase0_passed_on_tested_host",
+  "created_at_utc": "2026-10-17T12:03:29Z",
+  "runtime": {
+    "python": "3.12.15",
+    "python_executable": "/Applications/KiroCrew.app/Contents/Resources/backend-dist/kirocrew-backend-arm64/bin/python3.12",
+    "native_binary": "/Applications/KiroCrew.app/Contents/Resources/backend-dist/kirocrew-backend-arm64/lib/python3.12/site-packages/_pywhispercpp.cpython-312-darwin.so",
+    "capabilities": {
+      "backend": "metal",
+      "accelerated": true,
+      "encoder_only": false,
+      "detail": "metal acceleration is linked into this speech build",
+      "raw": "WHISPER : COREML = 0 | OPENVINO = 0 | MTL : EMBED_LIBRARY = 1 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | DOTPROD = 1 | ACCELERATE = 1 | REPACK = 1 |"
+    }
+  },
+  "host": {
+    "architecture": "arm64",
+    "macos": "27.0.1",
+    "model_name": "Mac mini",
+    "model_identifier": "Mac16,11",
+    "chip": "Apple M4 Pro",
+    "memory": "64 GB"
+  },
+  "fixture": {
+    "kind": "macOS synthesized bilingual speech",
+    "voices": {
+      "zh": "Tingting",
+      "en": "Samantha"
+    },
+    "sample_rate_hz": 16000
+  },
+  "requested_audio_seconds_per_model": 3600.0,
+  "model_sha256": {
+    "small": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+    "large-v3-turbo": "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69"
+  },
+  "models": [
+    {
+      "model": "small",
+      "model_bytes": 487601967,
+      "load_seconds": 0.17087499995250255,
+      "measured_audio_seconds": 3600.0,
+      "window_seconds": 30.0,
+      "window_count": 120,
+      "decode_wall_seconds": 65.06380308582447,
+      "real_time_factor": 0.018073278634951243,
+      "decode_seconds": {
+        "minimum": 0.42917704198043793,
+        "median": 0.5266360410023481,
+        "maximum": 0.6856390420580283
+      },
+      "backlog": {
+        "final_seconds": 0.0,
+        "maximum_seconds": 0.0
+      },
+      "accuracy": {
+        "zh": {
+          "audio_seconds": 11.371375,
+          "decode_seconds": 0.42290212493389845,
+          "metric": "cer_han",
+          "error_rate": 0.40425531914893614,
+          "normalization": "NFKC only; traditional/simplified differences count as errors",
+          "transcript": "今天我們測試本地會議轉路,項目進度正常,下一步檢查每一個音頻分塊是否完整,所有內容之在這台電腦上處理。"
+        },
+        "en": {
+          "audio_seconds": 10.5069375,
+          "decode_seconds": 0.3225610830122605,
+          "metric": "wer",
+          "error_rate": 0.0,
+          "normalization": "case-folded words without punctuation",
+          "transcript": "Today we are testing local meeting transcription. The project is on schedule. The next step is to verify that every audio chunk is complete. All content stays on this computer."
+        },
+        "mixed": {
+          "audio_seconds": 30.0,
+          "transcript": "今天我們測試本地會議轉路,項目進度正常,下一步檢查每一個音頻分快是否完整,所有內容之在這台電腦上處理。今天我們測試本地會議轉路,項目進度",
+          "contains_han": true,
+          "contains_english": false
+        }
+      },
+      "metal_active": true,
+      "metal_evidence": "whisper_backend_init_gpu: using MTL0 backend"
+    },
+    {
+      "model": "large-v3-turbo",
+      "model_bytes": 1624555275,
+      "load_seconds": 0.45436983299441636,
+      "measured_audio_seconds": 3600.0,
+      "window_seconds": 30.0,
+      "window_count": 120,
+      "decode_wall_seconds": 159.48694112489466,
+      "real_time_factor": 0.044301928090248514,
+      "decode_seconds": {
+        "minimum": 1.2637165420455858,
+        "median": 1.3245286659803241,
+        "maximum": 1.4026230829767883
+      },
+      "backlog": {
+        "final_seconds": 0.0,
+        "maximum_seconds": 0.0
+      },
+      "accuracy": {
+        "zh": {
+          "audio_seconds": 11.371375,
+          "decode_seconds": 1.3005647499812767,
+          "metric": "cer_han",
+          "error_rate": 0.02127659574468085,
+          "normalization": "NFKC only; traditional/simplified differences count as errors",
+          "transcript": "今天我们测试本地会议转录,项目进度正常,下一步检查每一个音频分块是否完整,所有内容之在这台电脑上处理。"
+        },
+        "en": {
+          "audio_seconds": 10.5069375,
+          "decode_seconds": 1.1468703330028802,
+          "metric": "wer",
+          "error_rate": 0.0,
+          "normalization": "case-folded words without punctuation",
+          "transcript": "Today we are testing local meeting transcription. The project is on schedule. The next step is to verify that every audio chunk is complete. All content stays on this computer."
+        },
+        "mixed": {
+          "audio_seconds": 30.0,
+          "transcript": "Today we are testing local meeting transcription. The project is on schedule. The next step is to verify that every audio chunk is complete. All content stays on this computer. Today we are testing local meeting transcription. The project is on schedule. The next step is to verify that every audio chunk is complete. All content stays on this computer. Today we are testing local meeting transcription. The project is on schedule.",
+          "contains_han": false,
+          "contains_english": true
+        }
+      },
+      "metal_active": true,
+      "metal_evidence": "whisper_backend_init_gpu: using MTL0 backend"
+    }
+  ],
+  "findings": {
+    "selected_model": "large-v3-turbo",
+    "language_policy": "Best-effort Chinese and English with an independent pause/VAD segmenter and a fresh automatic language decision per speech segment.",
+    "throughput": "Both models remain far ahead of real time on the measured Apple M4 Pro host and accumulate no recognition backlog.",
+    "model_accuracy": "Both models score zero WER on the English fixture. large-v3-turbo makes one Mandarin lexical error; small makes more lexical errors and emits Traditional Chinese. The raw Han CER overstates that gap because it intentionally counts Traditional/Simplified differences.",
+    "mixed_language_blocker": "With one automatic language decision for a 30-second window, neither model retains both languages: small emits only Chinese and large-v3-turbo emits only English.",
+    "remaining_release_qualification": [
+      "benchmark older Apple Silicon before widening support beyond the measured M4 Pro host"
+    ]
+  }
+}
