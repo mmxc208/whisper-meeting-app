@@ -373,7 +373,7 @@ var P = new class {
 		this.state = e;
 		for (let t of this.listeners) t(e);
 	}
-}(), F = (e) => P.subscribe(e), ae = () => P.snapshot(), I = "/vendor/mermaid.min.js", L = "script,iframe,frame,object,embed,applet,link,meta,base,form,input,button", R = /* @__PURE__ */ new Set([
+}(), ae = (e) => P.subscribe(e), oe = () => P.snapshot(), F = "/vendor/mermaid.min.js", I = "script,iframe,frame,object,embed,applet,link,meta,base,form,input,button", L = /* @__PURE__ */ new Set([
 	"action",
 	"data",
 	"formaction",
@@ -382,11 +382,11 @@ var P = new class {
 	"src",
 	"srcset",
 	"xlink:href"
-]), z = /(?:@import|expression\s*\(|url\s*\(|javascript:)/i, B = "\n  html { color-scheme: light; }\n  body { margin: 0; padding: 16px; font: 14px system-ui; background: #fff !important; color: #1f2328 !important; }\n  table { border-collapse: collapse; }\n  td, th { border: 1px solid #888; padding: 6px; }\n  pre { white-space: pre-wrap; }\n  .mermaid { display: flex; justify-content: center; background: #fff; color: #1f2328; border: 1px solid #d0d7de; border-radius: 8px; padding: 16px; margin: 12px 0; overflow: auto; }\n  .mermaid svg { width: 100%; max-width: none !important; height: auto; max-height: 85vh; }\n", V = "(function(){\n  var m = window.mermaid;\n  if (!m) return;\n  var KEYWORD = /^(?:flowchart|graph\\s+(?:TD|TB|BT|RL|LR)|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|quadrantChart|requirementDiagram|gitGraph|C4Context|C4Container|C4Component|C4Dynamic|C4Deployment|mindmap|timeline|zenuml|sankey|xychart|block|packet|kanban|architecture|radar|treemap)\\b/;\n  function sourceText(node){\n    var out = '';\n    for (var child = node.firstChild; child; child = child.nextSibling){\n      if (child.nodeType === 3) out += child.nodeValue;\n      else if (child.nodeType === 1) out += child.tagName === 'BR' ? '<br/>' : sourceText(child);\n    }\n    return out;\n  }\n  function copyInto(target, node){\n    for (var child = node.firstChild; child; child = child.nextSibling){\n      if (child.nodeType === 3) target.appendChild(document.createTextNode(child.nodeValue));\n      else if (child.nodeType === 1){\n        if (child.tagName === 'BR') target.appendChild(document.createElement('br'));\n        else copyInto(target, child);\n      }\n    }\n  }\n  function diagramHead(text){\n    // Skip Mermaid front matter (--- ... ---) and %% directive or comment lines,\n    // so the keyword test sees the diagram type itself. Plain YAML or a comment\n    // block that never reaches a diagram keyword is left as ordinary code.\n    return text.replace(/^\\s*---[\\s\\S]*?\\n---[ \\t]*\\n/, '').replace(/^(?:[ \\t]*%%.*(?:\\n|$))+/, '').replace(/^\\s+/, '');\n  }\n  function explicit(code){\n    var parent = code.parentElement;\n    return code.classList.contains('language-mermaid') || code.classList.contains('mermaid')\n      || (parent !== null && parent.tagName === 'PRE' && parent.classList.contains('mermaid'));\n  }\n  function promote(){\n    var nodes = document.querySelectorAll('code.language-mermaid, code.mermaid, pre > code');\n    for (var i = 0; i < nodes.length; i++){\n      var code = nodes[i];\n      if (!code.parentNode) continue;\n      if (!explicit(code) && !KEYWORD.test(diagramHead(sourceText(code)))) continue;\n      var host = code.closest('pre') || code;\n      var div = document.createElement('div');\n      div.className = 'mermaid';\n      copyInto(div, code);\n      if (host.parentNode) host.parentNode.replaceChild(div, host);\n    }\n  }\n  function start(){\n    try { promote(); } catch (e) {}\n    try { m.initialize({startOnLoad:false,securityLevel:'strict',suppressErrorRendering:true,theme:'default'}); } catch (e) {}\n    try { m.run({querySelector:'.mermaid',suppressErrors:true}); } catch (e) {}\n  }\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);\n  else start();\n})();";
-function H(e) {
+]), R = /(?:@import|expression\s*\(|url\s*\(|javascript:)/i, z = "\n  html { color-scheme: light; }\n  body { margin: 0; padding: 16px; font: 14px system-ui; background: #fff !important; color: #1f2328 !important; }\n  table { border-collapse: collapse; }\n  td, th { border: 1px solid #888; padding: 6px; }\n  pre { white-space: pre-wrap; }\n  .mermaid { display: flex; justify-content: center; background: #fff; color: #1f2328; border: 1px solid #d0d7de; border-radius: 8px; padding: 16px; margin: 12px 0; overflow: auto; }\n  .mermaid svg { width: 100%; max-width: none !important; height: auto; max-height: 85vh; }\n", B = "(function(){\n  var m = window.mermaid;\n  if (!m) return;\n  var KEYWORD = /^(?:flowchart|graph\\s+(?:TD|TB|BT|RL|LR)|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|quadrantChart|requirementDiagram|gitGraph|C4Context|C4Container|C4Component|C4Dynamic|C4Deployment|mindmap|timeline|zenuml|sankey|xychart|block|packet|kanban|architecture|radar|treemap)\\b/;\n  function sourceText(node){\n    var out = '';\n    for (var child = node.firstChild; child; child = child.nextSibling){\n      if (child.nodeType === 3) out += child.nodeValue;\n      else if (child.nodeType === 1) out += child.tagName === 'BR' ? '<br/>' : sourceText(child);\n    }\n    return out;\n  }\n  function copyInto(target, node){\n    for (var child = node.firstChild; child; child = child.nextSibling){\n      if (child.nodeType === 3) target.appendChild(document.createTextNode(child.nodeValue));\n      else if (child.nodeType === 1){\n        if (child.tagName === 'BR') target.appendChild(document.createElement('br'));\n        else copyInto(target, child);\n      }\n    }\n  }\n  function diagramHead(text){\n    // Skip Mermaid front matter (--- ... ---) and %% directive or comment lines,\n    // so the keyword test sees the diagram type itself. Plain YAML or a comment\n    // block that never reaches a diagram keyword is left as ordinary code.\n    return text.replace(/^\\s*---[\\s\\S]*?\\n---[ \\t]*\\n/, '').replace(/^(?:[ \\t]*%%.*(?:\\n|$))+/, '').replace(/^\\s+/, '');\n  }\n  function explicit(code){\n    var parent = code.parentElement;\n    return code.classList.contains('language-mermaid') || code.classList.contains('mermaid')\n      || (parent !== null && parent.tagName === 'PRE' && parent.classList.contains('mermaid'));\n  }\n  function promote(){\n    var nodes = document.querySelectorAll('code.language-mermaid, code.mermaid, pre > code');\n    for (var i = 0; i < nodes.length; i++){\n      var code = nodes[i];\n      if (!code.parentNode) continue;\n      if (!explicit(code) && !KEYWORD.test(diagramHead(sourceText(code)))) continue;\n      var host = code.closest('pre') || code;\n      var div = document.createElement('div');\n      div.className = 'mermaid';\n      copyInto(div, code);\n      if (host.parentNode) host.parentNode.replaceChild(div, host);\n    }\n  }\n  function start(){\n    try { promote(); } catch (e) {}\n    try { m.initialize({startOnLoad:false,securityLevel:'strict',suppressErrorRendering:true,theme:'default'}); } catch (e) {}\n    try { m.run({querySelector:'.mermaid',suppressErrors:true}); } catch (e) {}\n  }\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);\n  else start();\n})();";
+function V(e) {
 	return [
 		"default-src 'none'",
-		`script-src 'unsafe-inline' ${`${e}${I}`}`,
+		`script-src 'unsafe-inline' ${`${e}${F}`}`,
 		"style-src 'unsafe-inline'",
 		"img-src data:",
 		"font-src data:",
@@ -395,7 +395,7 @@ function H(e) {
 		"base-uri 'none'"
 	].join("; ");
 }
-function U() {
+function H() {
 	return [
 		"default-src 'none'",
 		"script-src 'unsafe-inline'",
@@ -407,61 +407,135 @@ function U() {
 		"base-uri 'none'"
 	].join("; ");
 }
-function W(e) {
-	e.querySelectorAll(L).forEach((e) => e.remove()), e.querySelectorAll("*").forEach((e) => {
+function U(e) {
+	e.querySelectorAll(I).forEach((e) => e.remove()), e.querySelectorAll("*").forEach((e) => {
 		for (let t of [...e.attributes]) {
 			let n = t.name.toLowerCase();
-			(n.startsWith("on") || R.has(n) || n === "style" && z.test(t.value)) && e.removeAttribute(t.name);
+			(n.startsWith("on") || L.has(n) || n === "style" && R.test(t.value)) && e.removeAttribute(t.name);
 		}
 	}), e.querySelectorAll("style").forEach((e) => {
-		z.test(e.textContent ?? "") && e.remove();
+		R.test(e.textContent ?? "") && e.remove();
 	});
 }
-function oe(e, t = window.location.origin) {
+function se(e, t = window.location.origin) {
 	let n = new DOMParser().parseFromString(e, "text/html"), r = document.implementation.createHTMLDocument(""), i = r.createDocumentFragment();
 	for (let e of [...n.body.childNodes]) i.appendChild(r.importNode(e, !0));
-	W(i);
+	U(i);
 	let a = r.createElement("meta");
-	a.httpEquiv = "Content-Security-Policy", a.content = H(t), r.head.prepend(a);
+	a.httpEquiv = "Content-Security-Policy", a.content = V(t), r.head.prepend(a);
 	let o = r.createElement("meta");
 	o.setAttribute("charset", "utf-8"), r.head.appendChild(o);
 	let s = r.createElement("style");
-	s.textContent = B, r.head.appendChild(s);
+	s.textContent = z, r.head.appendChild(s);
 	let c = r.createElement("script");
-	c.src = `${t}${I}`, c.crossOrigin = "anonymous", r.head.appendChild(c), r.body.appendChild(i);
+	c.src = `${t}${F}`, c.crossOrigin = "anonymous", r.head.appendChild(c), r.body.appendChild(i);
 	let l = r.createElement("script");
-	return l.textContent = V, r.body.appendChild(l), `<!doctype html>\n${r.documentElement.outerHTML}`;
+	return l.textContent = B, r.body.appendChild(l), `<!doctype html>\n${r.documentElement.outerHTML}`;
 }
-function se(e, t) {
+function ce(e, t) {
 	if (/<\/script/i.test(t)) throw Error("The installed Mermaid runtime cannot be embedded safely.");
 	let n = new DOMParser().parseFromString(e, "text/html"), r = document.implementation.createHTMLDocument("Meeting sketch"), i = r.createDocumentFragment();
 	for (let e of [...n.body.childNodes]) i.appendChild(r.importNode(e, !0));
-	W(i);
+	U(i);
 	let a = r.createElement("meta");
-	a.httpEquiv = "Content-Security-Policy", a.content = U(), r.head.prepend(a);
+	a.httpEquiv = "Content-Security-Policy", a.content = H(), r.head.prepend(a);
 	let o = r.createElement("meta");
 	o.setAttribute("charset", "utf-8"), r.head.appendChild(o);
 	let s = r.createElement("meta");
 	s.name = "viewport", s.content = "width=device-width, initial-scale=1", r.head.appendChild(s);
 	let c = r.createElement("style");
-	c.textContent = B, r.head.appendChild(c);
+	c.textContent = z, r.head.appendChild(c);
 	let l = r.createElement("script");
 	l.textContent = t, r.head.appendChild(l), r.body.appendChild(i);
 	let u = r.createElement("script");
-	return u.textContent = V, r.body.appendChild(u), `<!doctype html>\n${r.documentElement.outerHTML}`;
+	return u.textContent = B, r.body.appendChild(u), `<!doctype html>\n${r.documentElement.outerHTML}`;
+}
+//#endregion
+//#region src/inputProbe.ts
+var W = -120;
+function G(e) {
+	return e > 0 ? Math.max(W, Math.round(20 * Math.log10(e) * 10) / 10) : W;
+}
+function K(e) {
+	let t = e.reduce((e, t) => Math.max(e, t.channels), 0), n = Array(t).fill(0), r = Array(t).fill(0), i = 0;
+	for (let t of e) {
+		i += t.frames;
+		for (let e = 0; e < t.channels; e++) n[e] += t.sumSquares[e] ?? 0, r[e] = Math.max(r[e], t.peaks[e] ?? 0);
+	}
+	return {
+		channels: t,
+		frames: i,
+		rmsDb: n.map((e) => G(i > 0 ? Math.sqrt(e / i) : 0)),
+		peakDb: r.map(G)
+	};
+}
+function le(e) {
+	return e <= W ? "silent" : e < -60 ? "silent (noise floor)" : e < -40 ? "quiet" : "active";
+}
+var q = [{
+	label: "As the app records today",
+	requestedChannels: "1",
+	audio: {
+		channelCount: 1,
+		echoCancellation: !1,
+		noiseSuppression: !1
+	}
+}, {
+	label: "Asking for every channel",
+	requestedChannels: "all",
+	audio: {
+		channelCount: { ideal: 32 },
+		echoCancellation: !1,
+		noiseSuppression: !1,
+		autoGainControl: !1
+	}
+}];
+async function J(e, t, n) {
+	let r = await navigator.mediaDevices.getUserMedia({ audio: e.audio }), i = new AudioContext(), a = [];
+	try {
+		await i.audioWorklet.addModule(t);
+		let o = i.createMediaStreamSource(r), s = new AudioWorkletNode(i, "whisper-meeting-channel-probe");
+		s.port.onmessage = (e) => {
+			e.data?.type === "levels" && a.push(e.data);
+		}, o.connect(s), await new Promise((e) => setTimeout(e, n)), s.port.postMessage({ type: "stop" }), o.disconnect(), s.disconnect();
+		let c = r.getAudioTracks()[0], l = c?.getSettings() ?? {};
+		return {
+			label: e.label,
+			requestedChannels: e.requestedChannels,
+			trackLabel: c?.label ?? "",
+			settings: {
+				channelCount: l.channelCount,
+				sampleRate: l.sampleRate,
+				echoCancellation: l.echoCancellation,
+				noiseSuppression: l.noiseSuppression,
+				autoGainControl: l.autoGainControl
+			},
+			levels: K(a)
+		};
+	} finally {
+		r.getTracks().forEach((e) => e.stop()), await i.close().catch(() => void 0);
+	}
+}
+async function ue(e, t = 2500) {
+	let n = [];
+	for (let r of q) n.push(await J(r, e, t));
+	return {
+		inputs: (await navigator.mediaDevices.enumerateDevices().catch(() => [])).filter((e) => e.kind === "audioinput").map((e) => e.label || "(unnamed input)"),
+		passes: n
+	};
 }
 //#endregion
 //#region src/transcript.ts
-var G = 16e3, K = 30 * G, q = 2 * G, J = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]$/u, Y = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
-function X(e) {
-	let t = Math.floor(e / G), n = Math.floor(t / 60);
+var Y = 16e3, X = 30 * Y, Z = 2 * Y, Q = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]$/u, de = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+function fe(e) {
+	let t = Math.floor(e / Y), n = Math.floor(t / 60);
 	return `${String(n).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
-function Z(e, t) {
+function pe(e, t) {
 	let n = e.trimEnd(), r = t.trimStart();
-	return n ? r ? `${n}${J.test(n) && Y.test(r) ? "" : " "}${r}` : n : r;
+	return n ? r ? `${n}${Q.test(n) && de.test(r) ? "" : " "}${r}` : n : r;
 }
-function ce(e) {
+function me(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) t.set(n.epoch, Math.max(t.get(n.epoch) ?? 0, n.audio_end_sample));
 	let n = /* @__PURE__ */ new Map(), r = 0;
@@ -484,11 +558,11 @@ function ce(e) {
 			});
 			continue;
 		}
-		let e = (n.get(t.epoch) ?? 0) + t.audio_start_sample, r = Math.floor(e / K);
-		a !== void 0 && a.epoch === t.epoch && a.bucket === r && t.audio_start_sample - a.lastEnd <= q && a ? (a.text = Z(a.text, t.text), a.lastEnd = Math.max(a.lastEnd, t.audio_end_sample), o = r) : (s(), a = {
+		let e = (n.get(t.epoch) ?? 0) + t.audio_start_sample, r = Math.floor(e / X);
+		a !== void 0 && a.epoch === t.epoch && a.bucket === r && t.audio_start_sample - a.lastEnd <= Z && a ? (a.text = pe(a.text, t.text), a.lastEnd = Math.max(a.lastEnd, t.audio_end_sample), o = r) : (s(), a = {
 			key: String(t.id),
 			text: t.text.trim(),
-			timestamp: r === o ? void 0 : X(e),
+			timestamp: r === o ? void 0 : fe(e),
 			epoch: t.epoch,
 			bucket: r,
 			lastEnd: t.audio_end_sample
@@ -498,63 +572,63 @@ function ce(e) {
 }
 //#endregion
 //#region src/App.tsx
-var Q = "/apps/whisper-meeting/api";
-function $() {
-	let _ = t(), v = i(), [y, b] = p(""), [x, S] = p(), [C, w] = p(""), [T, E] = p(), [D, O] = p(), [k, A] = p("notes"), [j, M] = p(""), N = ne(F, ae);
+var $ = "/apps/whisper-meeting/api", he = "/apps/whisper-meeting/ui/dist/whisper-meeting-worklet.js";
+function ge() {
+	let _ = t(), v = i(), [y, b] = p(""), [x, S] = p(), [C, w] = p(""), [T, E] = p(), [D, O] = p(), [k, A] = p("notes"), [j, M] = p({ running: !1 }), [N, F] = p(""), I = ne(ae, oe);
 	f(() => {
 		P.attach(_);
 	}, [_]), f(() => {
 		let e = (e) => {
-			(N.phase === "recording" || N.queuedChunks > 0) && e.preventDefault();
+			(I.phase === "recording" || I.queuedChunks > 0) && e.preventDefault();
 		};
 		return window.addEventListener("beforeunload", e), () => window.removeEventListener("beforeunload", e);
-	}, [N.phase, N.queuedChunks]);
-	let I = r({
+	}, [I.phase, I.queuedChunks]);
+	let L = r({
 		queryKey: ["meetings"],
-		queryFn: () => _.get(`${Q}/meetings`)
-	}), L = r({
-		queryKey: ["whisper-meeting-model"],
-		queryFn: () => _.get(`${Q}/model`),
-		refetchInterval: (e) => e.state.data?.model.status === "installing" && 1e3
+		queryFn: () => _.get(`${$}/meetings`)
 	}), R = r({
-		queryKey: ["meeting", x],
-		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}`),
-		enabled: !!x
+		queryKey: ["whisper-meeting-model"],
+		queryFn: () => _.get(`${$}/model`),
+		refetchInterval: (e) => e.state.data?.model.status === "installing" && 1e3
 	}), z = r({
-		queryKey: ["meeting-transcript", x],
-		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}/transcript`),
+		queryKey: ["meeting", x],
+		queryFn: () => _.get(`${$}/meetings/${encodeURIComponent(x ?? "")}`),
 		enabled: !!x
 	}), B = r({
+		queryKey: ["meeting-transcript", x],
+		queryFn: () => _.get(`${$}/meetings/${encodeURIComponent(x ?? "")}/transcript`),
+		enabled: !!x
+	}), V = r({
 		queryKey: ["meeting-agents", x],
-		queryFn: () => _.get(`${Q}/meetings/${encodeURIComponent(x ?? "")}/agents`),
+		queryFn: () => _.get(`${$}/meetings/${encodeURIComponent(x ?? "")}/agents`),
 		enabled: !!x,
 		refetchInterval: (e) => re(e.state.data?.agents ?? []) ? 1e3 : !1
-	}), V = n({
-		mutationFn: () => _.post(`${Q}/model/install`, {}),
+	}), H = n({
+		mutationFn: () => _.post(`${$}/model/install`, {}),
 		onSuccess: async () => {
 			await v.invalidateQueries({ queryKey: ["whisper-meeting-model"] });
 		}
-	}), H = n({
-		mutationFn: (e) => _.post(`${Q}/meetings`, { title: e }),
+	}), U = n({
+		mutationFn: (e) => _.post(`${$}/meetings`, { title: e }),
 		onSuccess: async () => {
 			b(""), await v.invalidateQueries({ queryKey: ["meetings"] });
 		}
-	}), U = n({
-		mutationFn: (e) => _.post(`${Q}/meetings/${encodeURIComponent(x ?? "")}/context`, { text: e }),
+	}), W = n({
+		mutationFn: (e) => _.post(`${$}/meetings/${encodeURIComponent(x ?? "")}/context`, { text: e }),
 		onSuccess: async () => {
-			M(""), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
+			F(""), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 		}
 	});
 	f(() => {
 		if (!x) return;
-		let e = new EventSource(`${Q}/meetings/${encodeURIComponent(x)}/events`);
+		let e = new EventSource(`${$}/meetings/${encodeURIComponent(x)}/events`);
 		return e.onmessage = () => {
 			v.invalidateQueries({ queryKey: ["meetings"] }), v.invalidateQueries({ queryKey: ["meeting", x] }), v.invalidateQueries({ queryKey: ["meeting-transcript", x] }), v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 		}, () => e.close();
 	}, [v, x]), f(() => {
-		R.data && P.markServerState(R.data.meeting.id, R.data.meeting.state);
-	}, [R.data]);
-	async function W(e, t) {
+		z.data && P.markServerState(z.data.meeting.id, z.data.meeting.state);
+	}, [z.data]);
+	async function G(e, t) {
 		S(e), w("");
 		try {
 			await t(), await Promise.all([
@@ -567,14 +641,14 @@ function $() {
 			w(e instanceof Error ? e.message : String(e));
 		}
 	}
-	async function G(e, t) {
+	async function K(e, t) {
 		w("");
 		try {
-			let n = await _.raw(`${Q}/meetings/${encodeURIComponent(e)}/export?format=${t}`), r = (n.headers.get("Content-Disposition") ?? "").match(/filename="([^"]+)"/)?.[1] ?? `meeting.${t === "text" ? "txt" : t === "markdown" ? "md" : "json"}`, i = await n.blob();
+			let n = await _.raw(`${$}/meetings/${encodeURIComponent(e)}/export?format=${t}`), r = (n.headers.get("Content-Disposition") ?? "").match(/filename="([^"]+)"/)?.[1] ?? `meeting.${t === "text" ? "txt" : t === "markdown" ? "md" : "json"}`, i = await n.blob();
 			if (t === "sketch") {
 				let e = await fetch("/vendor/mermaid.min.js");
 				if (!e.ok) throw Error(`Could not load the local Mermaid runtime (${e.status}).`);
-				let t = se(await i.text(), await e.text());
+				let t = ce(await i.text(), await e.text());
 				i = new Blob([t], { type: "text/html;charset=utf-8" });
 			}
 			let a = URL.createObjectURL(i), o = document.createElement("a");
@@ -583,22 +657,22 @@ function $() {
 			w(e instanceof Error ? e.message : String(e));
 		}
 	}
-	async function K(e) {
+	async function q(e) {
 		let t = e.title || "Untitled meeting";
 		if (window.confirm(`Permanently delete “${t}” and its local data?`)) {
 			w("");
 			try {
-				await _.del(`${Q}/meetings/${encodeURIComponent(e.id)}`), x === e.id && S(void 0), await v.invalidateQueries({ queryKey: ["meetings"] });
+				await _.del(`${$}/meetings/${encodeURIComponent(e.id)}`), x === e.id && S(void 0), await v.invalidateQueries({ queryKey: ["meetings"] });
 			} catch (e) {
 				w(e instanceof Error ? e.message : String(e));
 			}
 		}
 	}
-	async function q(e) {
+	async function J(e) {
 		if (x) {
 			w(""), E(e);
 			try {
-				await _.post(`${Q}/meetings/${encodeURIComponent(x)}/segments/${e}/retry`, {}), await Promise.all([v.invalidateQueries({ queryKey: ["meeting", x] }), v.invalidateQueries({ queryKey: ["meeting-transcript", x] })]);
+				await _.post(`${$}/meetings/${encodeURIComponent(x)}/segments/${e}/retry`, {}), await Promise.all([v.invalidateQueries({ queryKey: ["meeting", x] }), v.invalidateQueries({ queryKey: ["meeting-transcript", x] })]);
 			} catch (e) {
 				w(e instanceof Error ? e.message : String(e));
 			} finally {
@@ -606,11 +680,11 @@ function $() {
 			}
 		}
 	}
-	async function J(e) {
+	async function Y(e) {
 		if (x) {
 			w(""), O(e);
 			try {
-				await _.post(`${Q}/meetings/${encodeURIComponent(x)}/agents/${encodeURIComponent(e)}/retry`, {}), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
+				await _.post(`${$}/meetings/${encodeURIComponent(x)}/agents/${encodeURIComponent(e)}/retry`, {}), await v.invalidateQueries({ queryKey: ["meeting-agents", x] });
 			} catch (e) {
 				w(e instanceof Error ? e.message : String(e));
 			} finally {
@@ -618,7 +692,7 @@ function $() {
 			}
 		}
 	}
-	let Y = I.data?.meetings ?? [], X = Y.find((e) => e.last_error), Z = I.error ?? L.error ?? H.error ?? V.error ?? R.error ?? z.error ?? B.error ?? U.error, $ = Z instanceof Error ? Z.message : String(Z ?? "");
+	let X = L.data?.meetings ?? [], Z = X.find((e) => e.last_error), Q = L.error ?? R.error ?? U.error ?? H.error ?? z.error ?? B.error ?? V.error ?? W.error, de = Q instanceof Error ? Q.message : String(Q ?? "");
 	return /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ h(te, {
 		title: "Whisper Meeting",
 		subtitle: "Durable, local-first meeting transcription"
@@ -630,7 +704,7 @@ function $() {
 				children: [
 					/* @__PURE__ */ h(d, {
 						label: "Meetings",
-						value: String(Y.length),
+						value: String(X.length),
 						accent: !0
 					}),
 					/* @__PURE__ */ h(d, {
@@ -639,37 +713,37 @@ function $() {
 					}),
 					/* @__PURE__ */ h(d, {
 						label: "Whisper model",
-						value: L.data?.model.status ?? "Checking"
+						value: R.data?.model.status ?? "Checking"
 					}),
 					/* @__PURE__ */ h(d, {
 						label: "Capture",
-						value: N.phase
+						value: I.phase
 					}),
 					/* @__PURE__ */ h(d, {
 						label: "Upload queue",
-						value: String(N.queuedChunks)
+						value: String(I.queuedChunks)
 					})
 				]
 			}),
-			Z ? /* @__PURE__ */ h("div", {
+			Q ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
 				children: /* @__PURE__ */ h(l, {
 					title: "Whisper Meeting could not load",
-					message: $
+					message: de
 				})
 			}) : null,
-			N.fatalError || N.uploadError ? /* @__PURE__ */ h("div", {
+			I.fatalError || I.uploadError ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
 				children: /* @__PURE__ */ h(l, {
-					title: N.fatalError ? "Capture stopped" : "Upload will retry",
-					message: N.fatalError ?? N.uploadError
+					title: I.fatalError ? "Capture stopped" : "Upload will retry",
+					message: I.fatalError ?? I.uploadError
 				})
 			}) : null,
-			X ? /* @__PURE__ */ h("div", {
+			Z ? /* @__PURE__ */ h("div", {
 				className: "mb-4",
 				children: /* @__PURE__ */ h(l, {
 					title: "Recognition is waiting to recover",
-					message: `${X.title || "Untitled meeting"}: ${X.last_error}`
+					message: `${Z.title || "Untitled meeting"}: ${Z.last_error}`
 				})
 			}) : null,
 			C ? /* @__PURE__ */ h("div", {
@@ -679,7 +753,7 @@ function $() {
 					message: C
 				})
 			}) : null,
-			N.phase === "recording" ? /* @__PURE__ */ g(o, {
+			I.phase === "recording" ? /* @__PURE__ */ g(o, {
 				className: "mb-4",
 				children: [
 					/* @__PURE__ */ h(s, { children: "Recording locally" }),
@@ -691,12 +765,12 @@ function $() {
 						className: "mt-3 flex gap-2",
 						children: [/* @__PURE__ */ h(a, {
 							onClick: () => {
-								N.meetingId && W(N.meetingId, () => P.pause(_));
+								I.meetingId && G(I.meetingId, () => P.pause(_));
 							},
 							children: "Pause"
 						}), /* @__PURE__ */ h(a, {
 							onClick: () => {
-								N.meetingId && W(N.meetingId, () => P.end(_));
+								I.meetingId && G(I.meetingId, () => P.end(_));
 							},
 							children: "End"
 						})]
@@ -708,14 +782,14 @@ function $() {
 				"uploading",
 				"transcribing",
 				"recovering"
-			].includes(N.phase) ? /* @__PURE__ */ g(o, {
+			].includes(I.phase) ? /* @__PURE__ */ g(o, {
 				className: "mb-4",
 				children: [/* @__PURE__ */ h(s, { children: "Finishing the durable cut" }), /* @__PURE__ */ h("p", {
 					className: "text-sm text-muted mt-2",
-					children: N.phase === "transcribing" ? "All captured audio is durable. Waiting for final transcript coverage." : "Keeping the meeting open until every local chunk has a durable backend ACK."
+					children: I.phase === "transcribing" ? "All captured audio is durable. Waiting for final transcript coverage." : "Keeping the meeting open until every local chunk has a durable backend ACK."
 				})]
 			}) : null,
-			L.data?.model.status === "ready" ? null : /* @__PURE__ */ g(o, {
+			R.data?.model.status === "ready" ? null : /* @__PURE__ */ g(o, {
 				className: "mb-4",
 				children: [
 					/* @__PURE__ */ h(s, { children: "Local Whisper model" }),
@@ -723,18 +797,121 @@ function $() {
 						className: "text-sm text-muted mt-2",
 						children: "Whisper Meeting keeps its own verified large-v3-turbo model so Kiro Crew updates cannot replace it."
 					}),
-					L.data?.model.error ? /* @__PURE__ */ h("p", {
+					R.data?.model.error ? /* @__PURE__ */ h("p", {
 						className: "text-sm text-danger mt-2",
-						children: L.data.model.error
+						children: R.data.model.error
 					}) : null,
 					/* @__PURE__ */ h("div", {
 						className: "mt-3",
 						children: /* @__PURE__ */ h(a, {
-							onClick: () => V.mutate(),
-							disabled: L.data?.model.status === "installing" || V.isPending,
-							children: L.data?.model.status === "installing" ? "Installing and testing…" : "Install local model"
+							onClick: () => H.mutate(),
+							disabled: R.data?.model.status === "installing" || H.isPending,
+							children: R.data?.model.status === "installing" ? "Installing and testing…" : "Install local model"
 						})
 					})
+				]
+			}),
+			I.phase === "recording" ? null : /* @__PURE__ */ g(o, {
+				className: "mb-4",
+				children: [
+					/* @__PURE__ */ h(s, { children: "Input check" }),
+					/* @__PURE__ */ h("p", {
+						className: "text-sm text-muted mt-2",
+						children: "Opens the default input for about five seconds, once as the app records today and once asking for every channel, and shows the level on each channel. Speak, and let the call play, while it runs. On an aggregate device the microphone is channel 1 and the call is channels 2 and 3."
+					}),
+					/* @__PURE__ */ h("div", {
+						className: "mt-3 flex gap-2 items-center",
+						children: /* @__PURE__ */ h(a, {
+							disabled: j.running || [
+								"starting",
+								"stopping",
+								"uploading"
+							].includes(I.phase),
+							onClick: () => {
+								M({ running: !0 }), ue(he).then((e) => M({
+									running: !1,
+									report: e
+								})).catch((e) => M({
+									running: !1,
+									error: e instanceof Error ? e.message : String(e)
+								}));
+							},
+							children: j.running ? "Listening…" : "Check input device"
+						})
+					}),
+					j.error ? /* @__PURE__ */ h("p", {
+						className: "text-sm text-danger mt-2",
+						children: j.error
+					}) : null,
+					j.report ? /* @__PURE__ */ g("div", {
+						className: "mt-3 text-sm",
+						children: [/* @__PURE__ */ g("p", {
+							className: "text-muted",
+							children: ["Audio inputs visible to the browser: ", j.report.inputs.join(", ") || "none"]
+						}), j.report.passes.map((e) => /* @__PURE__ */ g("div", {
+							className: "mt-3",
+							children: [
+								/* @__PURE__ */ g("p", {
+									className: "font-medium text-text",
+									children: [
+										e.label,
+										" (requested channels: ",
+										e.requestedChannels,
+										")"
+									]
+								}),
+								/* @__PURE__ */ g("p", {
+									className: "text-muted",
+									children: [
+										"Device: ",
+										e.trackLabel || "unknown",
+										".",
+										" ",
+										"Track settings: ",
+										e.settings.channelCount ?? "?",
+										" ch, ",
+										e.settings.sampleRate ?? "?",
+										" Hz,",
+										" ",
+										"echo cancellation ",
+										String(e.settings.echoCancellation ?? "?"),
+										",",
+										" ",
+										"noise suppression ",
+										String(e.settings.noiseSuppression ?? "?"),
+										",",
+										" ",
+										"auto gain ",
+										String(e.settings.autoGainControl ?? "?"),
+										"."
+									]
+								}),
+								/* @__PURE__ */ g("p", {
+									className: "text-text",
+									children: [
+										"Delivered to the worklet: ",
+										/* @__PURE__ */ h("strong", { children: e.levels.channels }),
+										" channel",
+										e.levels.channels === 1 ? "" : "s"
+									]
+								}),
+								/* @__PURE__ */ h("ul", {
+									className: "list-disc ml-5",
+									children: e.levels.rmsDb.map((t, n) => /* @__PURE__ */ g("li", { children: [
+										"Channel ",
+										n + 1,
+										": RMS ",
+										t,
+										" dBFS, peak ",
+										e.levels.peakDb[n],
+										" dBFS (",
+										le(t),
+										")"
+									] }, n))
+								})
+							]
+						}, e.label))]
+					}) : null
 				]
 			}),
 			/* @__PURE__ */ g(o, {
@@ -748,16 +925,16 @@ function $() {
 						"aria-label": "Meeting title",
 						maxLength: 200
 					}), /* @__PURE__ */ h(a, {
-						onClick: () => H.mutate(y),
-						disabled: H.isPending,
-						children: H.isPending ? "Creating…" : "Create meeting"
+						onClick: () => U.mutate(y),
+						disabled: U.isPending,
+						children: U.isPending ? "Creating…" : "Create meeting"
 					})]
 				})]
 			}),
-			/* @__PURE__ */ g(o, { children: [/* @__PURE__ */ h(s, { children: "Meeting history" }), I.isPending ? /* @__PURE__ */ h("p", {
+			/* @__PURE__ */ g(o, { children: [/* @__PURE__ */ h(s, { children: "Meeting history" }), L.isPending ? /* @__PURE__ */ h("p", {
 				className: "text-sm text-muted mt-3",
 				children: "Loading meetings…"
-			}) : Y.length === 0 ? /* @__PURE__ */ h(c, {
+			}) : X.length === 0 ? /* @__PURE__ */ h(c, {
 				icon: /* @__PURE__ */ h("span", {
 					"aria-hidden": "true",
 					children: "🎙️"
@@ -766,7 +943,7 @@ function $() {
 				subtitle: "Create a meeting to verify the durable app store."
 			}) : /* @__PURE__ */ h("div", {
 				className: "divide-y divide-border mt-3",
-				children: Y.map((t) => /* @__PURE__ */ g("div", {
+				children: X.map((t) => /* @__PURE__ */ g("div", {
 					className: "py-3 first:pt-0 last:pb-0",
 					children: [/* @__PURE__ */ g("div", {
 						className: "flex items-center justify-between gap-3",
@@ -780,25 +957,25 @@ function $() {
 									onClick: () => S(t.id),
 									children: "View"
 								}),
-								t.state === "draft" && N.phase !== "recording" ? /* @__PURE__ */ h(a, {
-									onClick: () => void W(t.id, () => P.start(_, t.id)),
-									disabled: N.phase === "starting" || L.data?.model.status !== "ready",
+								t.state === "draft" && I.phase !== "recording" ? /* @__PURE__ */ h(a, {
+									onClick: () => void G(t.id, () => P.start(_, t.id)),
+									disabled: I.phase === "starting" || R.data?.model.status !== "ready",
 									children: "Record"
 								}) : null,
-								t.state === "paused" && N.phase !== "recording" ? /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ h(a, {
-									onClick: () => void W(t.id, () => P.start(_, t.id, !0)),
-									disabled: N.phase === "starting" || L.data?.model.status !== "ready",
+								t.state === "paused" && I.phase !== "recording" ? /* @__PURE__ */ g(m, { children: [/* @__PURE__ */ h(a, {
+									onClick: () => void G(t.id, () => P.start(_, t.id, !0)),
+									disabled: I.phase === "starting" || R.data?.model.status !== "ready",
 									children: "Resume"
 								}), /* @__PURE__ */ h(a, {
-									onClick: () => void W(t.id, () => P.recover(_, t.id, "end")),
+									onClick: () => void G(t.id, () => P.recover(_, t.id, "end")),
 									children: "End"
 								})] }) : null,
-								t.state === "recording" && N.meetingId !== t.id ? /* @__PURE__ */ h(a, {
-									onClick: () => void W(t.id, () => P.recover(_, t.id, "pause")),
+								t.state === "recording" && I.meetingId !== t.id ? /* @__PURE__ */ h(a, {
+									onClick: () => void G(t.id, () => P.recover(_, t.id, "pause")),
 									children: "Recover & pause"
 								}) : null,
 								["recording", "draining"].includes(t.state) ? null : /* @__PURE__ */ h(a, {
-									onClick: () => void K(t),
+									onClick: () => void q(t),
 									children: "Delete"
 								})
 							]
@@ -818,36 +995,36 @@ function $() {
 				children: [
 					/* @__PURE__ */ g("div", {
 						className: "flex flex-wrap items-start justify-between gap-3",
-						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(s, { children: "Meeting workspace" }), R.data ? /* @__PURE__ */ g("p", {
+						children: [/* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h(s, { children: "Meeting workspace" }), z.data ? /* @__PURE__ */ g("p", {
 							className: "text-sm text-muted mt-2",
 							children: [
-								R.data.meeting.state,
+								z.data.meeting.state,
 								" · ",
-								R.data.progress.transcribed_chunks,
+								z.data.progress.transcribed_chunks,
 								"/",
-								R.data.progress.chunks,
+								z.data.progress.chunks,
 								" chunks covered",
-								` · ${R.data.progress.pending_chunks} awaiting recognition`,
-								R.data.operation ? ` · ${R.data.operation.kind} ${R.data.operation.state}` : ""
+								` · ${z.data.progress.pending_chunks} awaiting recognition`,
+								z.data.operation ? ` · ${z.data.operation.kind} ${z.data.operation.state}` : ""
 							]
 						}) : null] }), /* @__PURE__ */ h("div", {
 							className: "flex flex-wrap gap-2 text-xs text-muted",
-							children: (B.data?.agents ?? []).map((e) => /* @__PURE__ */ g("span", {
+							children: (V.data?.agents ?? []).map((e) => /* @__PURE__ */ g("span", {
 								className: "rounded-full border border-border px-2 py-1",
 								children: [
 									e.agent_id === "whisper-meeting-note-taker" ? "Note Taker" : "Sketch Artist",
 									":",
 									" ",
-									ie(e, R.data?.meeting.state),
+									ie(e, z.data?.meeting.state),
 									(() => {
-										let t = (B.data?.dispatch_counts ?? []).filter((t) => t.agent_id === e.agent_id && t.state === "pending").reduce((e, t) => e + t.count, 0);
+										let t = (V.data?.dispatch_counts ?? []).filter((t) => t.agent_id === e.agent_id && t.state === "pending").reduce((e, t) => e + t.count, 0);
 										return t ? ` · ${t} queued` : "";
 									})()
 								]
 							}, e.agent_id))
 						})]
 					}),
-					(B.data?.agents ?? []).filter((e) => e.state === "failed").map((e) => /* @__PURE__ */ g("div", {
+					(V.data?.agents ?? []).filter((e) => e.state === "failed").map((e) => /* @__PURE__ */ g("div", {
 						className: "mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-danger/40 px-3 py-2",
 						children: [/* @__PURE__ */ g("p", {
 							className: "text-sm text-danger",
@@ -859,14 +1036,14 @@ function $() {
 								"Transcription is unaffected."
 							]
 						}), /* @__PURE__ */ h(a, {
-							onClick: () => void J(e.agent_id),
+							onClick: () => void Y(e.agent_id),
 							disabled: D !== void 0,
 							children: D === e.agent_id ? "Retrying…" : "Retry agent"
 						})]
 					}, `${e.agent_id}-failure`)),
-					R.data?.meeting.last_error ? /* @__PURE__ */ g("p", {
+					z.data?.meeting.last_error ? /* @__PURE__ */ g("p", {
 						className: "text-sm text-danger mt-2",
-						children: ["Recognition will retry without deleting audio: ", R.data.meeting.last_error]
+						children: ["Recognition will retry without deleting audio: ", z.data.meeting.last_error]
 					}) : null,
 					/* @__PURE__ */ g("div", {
 						className: "mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]",
@@ -886,27 +1063,27 @@ function $() {
 										children: "Sketch"
 									}),
 									/* @__PURE__ */ h(a, {
-										onClick: () => void G(x, "notes"),
+										onClick: () => void K(x, "notes"),
 										children: "Export notes"
 									}),
 									/* @__PURE__ */ h(a, {
-										onClick: () => void G(x, "sketch"),
+										onClick: () => void K(x, "sketch"),
 										children: "Export sketch"
 									}),
 									/* @__PURE__ */ h(a, {
-										onClick: () => void G(x, "combined"),
+										onClick: () => void K(x, "combined"),
 										children: "Combined"
 									})
 								]
 							}), /* @__PURE__ */ h("div", {
 								className: "mt-3 min-h-64 rounded-md border border-border p-4",
-								children: k === "notes" ? /* @__PURE__ */ h(ee, { content: B.data?.outputs["whisper-meeting-note-taker"] ?? "_Notes pending._" }) : /* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("p", {
+								children: k === "notes" ? /* @__PURE__ */ h(ee, { content: V.data?.outputs["whisper-meeting-note-taker"] ?? "_Notes pending._" }) : /* @__PURE__ */ g("div", { children: [/* @__PURE__ */ h("p", {
 									className: "text-xs text-muted mb-3",
 									children: "Sketch output is isolated with scripts, navigation, and network access disabled."
 								}), /* @__PURE__ */ h("iframe", {
 									title: "Meeting sketch",
 									sandbox: "allow-scripts",
-									srcDoc: oe(B.data?.outputs["whisper-meeting-sketch-artist"] ?? "<p>Sketch pending.</p>"),
+									srcDoc: se(V.data?.outputs["whisper-meeting-sketch-artist"] ?? "<p>Sketch pending.</p>"),
 									className: "w-full rounded-md border border-border bg-surface",
 									style: { height: "clamp(36rem, 70vh, 52rem)" }
 								})] })
@@ -922,22 +1099,22 @@ function $() {
 									className: "flex flex-wrap gap-2",
 									children: [
 										/* @__PURE__ */ h(a, {
-											onClick: () => void G(x, "markdown"),
+											onClick: () => void K(x, "markdown"),
 											children: "Markdown"
 										}),
 										/* @__PURE__ */ h(a, {
-											onClick: () => void G(x, "text"),
+											onClick: () => void K(x, "text"),
 											children: "Text"
 										}),
 										/* @__PURE__ */ h(a, {
-											onClick: () => void G(x, "json"),
+											onClick: () => void K(x, "json"),
 											children: "JSON"
 										})
 									]
 								})]
 							}), /* @__PURE__ */ g("div", {
 								className: "mt-3 max-h-[32rem] space-y-2 overflow-y-auto pr-2",
-								children: [ce(z.data?.segments ?? []).map((e) => e.kind === "speech" ? /* @__PURE__ */ g("div", { children: [e.timestamp ? /* @__PURE__ */ h("div", {
+								children: [me(B.data?.segments ?? []).map((e) => e.kind === "speech" ? /* @__PURE__ */ g("div", { children: [e.timestamp ? /* @__PURE__ */ h("div", {
 									className: "mb-1 mt-4 text-xs font-medium tabular-nums text-muted",
 									children: e.timestamp
 								}) : null, /* @__PURE__ */ h("p", {
@@ -956,11 +1133,11 @@ function $() {
 											"s"
 										]
 									}), /* @__PURE__ */ h(a, {
-										onClick: () => void q(e.segment.id),
+										onClick: () => void J(e.segment.id),
 										disabled: T !== void 0,
 										children: T === e.segment.id ? "Retrying…" : "Recognize again"
 									})]
-								}, e.key)), z.data && z.data.segments.length === 0 ? /* @__PURE__ */ h("p", {
+								}, e.key)), B.data && B.data.segments.length === 0 ? /* @__PURE__ */ h("p", {
 									className: "text-sm text-muted",
 									children: "No committed speech yet."
 								}) : null]
@@ -978,9 +1155,9 @@ function $() {
 								className: "mt-1 text-xs text-muted",
 								children: "Add participants, agenda, terminology, or corrections. Messages go to both agents and never rewrite the raw transcript."
 							}),
-							(B.data?.context ?? []).length > 0 ? /* @__PURE__ */ h("div", {
+							(V.data?.context ?? []).length > 0 ? /* @__PURE__ */ h("div", {
 								className: "mt-3 max-h-32 space-y-2 overflow-y-auto",
-								children: B.data?.context.map((t) => /* @__PURE__ */ g("div", {
+								children: V.data?.context.map((t) => /* @__PURE__ */ g("div", {
 									className: "rounded-md bg-muted/20 px-3 py-2 text-sm",
 									children: [/* @__PURE__ */ g("span", {
 										className: "mr-2 text-xs text-muted",
@@ -992,23 +1169,23 @@ function $() {
 								className: "mt-3 flex flex-col gap-2 md:flex-row",
 								onSubmit: (e) => {
 									e.preventDefault();
-									let t = j.trim();
-									R.data?.meeting.state === "recording" && t && !U.isPending && U.mutate(t);
+									let t = N.trim();
+									z.data?.meeting.state === "recording" && t && !W.isPending && W.mutate(t);
 								},
 								children: [/* @__PURE__ */ h(u, {
-									value: j,
-									onChange: (e) => M(e.target.value),
+									value: N,
+									onChange: (e) => F(e.target.value),
 									placeholder: "Tell the meeting participants, agenda, or a correction…",
 									"aria-label": "Meeting context",
 									maxLength: 4e3,
-									disabled: R.data?.meeting.state !== "recording"
+									disabled: z.data?.meeting.state !== "recording"
 								}), /* @__PURE__ */ h(a, {
 									type: "submit",
-									disabled: R.data?.meeting.state !== "recording" || !j.trim() || U.isPending,
-									children: U.isPending ? "Sending…" : "Send"
+									disabled: z.data?.meeting.state !== "recording" || !N.trim() || W.isPending,
+									children: W.isPending ? "Sending…" : "Send"
 								})]
 							}),
-							R.data?.meeting.state === "recording" ? null : /* @__PURE__ */ h("p", {
+							z.data?.meeting.state === "recording" ? null : /* @__PURE__ */ h("p", {
 								className: "mt-2 text-xs text-muted",
 								children: "Meeting Chat is available while recording."
 							})
@@ -1020,4 +1197,4 @@ function $() {
 	})] });
 }
 //#endregion
-export { $ as default };
+export { ge as default };

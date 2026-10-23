@@ -20,6 +20,7 @@ import {
 } from './agentStatus'
 import { captureEngine, captureSnapshot, subscribeCapture } from './captureEngine'
 import { buildSketchSrcdoc, buildStandaloneSketchHtml } from './sketchSrcdoc'
+import { describeLevel, probeInput, type ProbeReport } from './inputProbe'
 import { visibleTranscriptRows } from './transcript'
 
 type Meeting = {
@@ -89,6 +90,7 @@ type AgentResult = {
   outputs: Record<string, string>
 }
 const BACKEND_API = '/apps/whisper-meeting/api'
+const WORKLET_URL = '/apps/whisper-meeting/ui/dist/whisper-meeting-worklet.js'
 
 export default function WhisperMeeting() {
   const api = useAppApi()
@@ -99,6 +101,7 @@ export default function WhisperMeeting() {
   const [retryingSegmentId, setRetryingSegmentId] = useState<number>()
   const [retryingAgentId, setRetryingAgentId] = useState<string>()
   const [agentTab, setAgentTab] = useState<'notes' | 'sketch'>('notes')
+  const [probe, setProbe] = useState<{ running: boolean; report?: ProbeReport; error?: string }>({ running: false })
   const [meetingContext, setMeetingContext] = useState('')
   const capture = useSyncExternalStore(subscribeCapture, captureSnapshot)
 
@@ -400,6 +403,63 @@ export default function WhisperMeeting() {
                 {model.data?.model.status === 'installing' ? 'Installing and testing…' : 'Install local model'}
               </Btn>
             </div>
+          </Card>
+        ) : null}
+
+        {capture.phase !== 'recording' ? (
+          <Card className="mb-4">
+            <CardTitle>Input check</CardTitle>
+            <p className="text-sm text-muted mt-2">
+              Opens the default input for about five seconds, once as the app records today and once asking for every channel, and shows the level on each channel. Speak, and let the call play, while it runs. On an aggregate device the microphone is channel 1 and the call is channels 2 and 3.
+            </p>
+            <div className="mt-3 flex gap-2 items-center">
+              <Btn
+                disabled={probe.running || ['starting', 'stopping', 'uploading'].includes(capture.phase)}
+                onClick={() => {
+                  setProbe({ running: true })
+                  probeInput(WORKLET_URL)
+                    .then(report => setProbe({ running: false, report }))
+                    .catch(error => setProbe({
+                      running: false,
+                      error: error instanceof Error ? error.message : String(error),
+                    }))
+                }}
+              >
+                {probe.running ? 'Listening…' : 'Check input device'}
+              </Btn>
+            </div>
+            {probe.error ? <p className="text-sm text-danger mt-2">{probe.error}</p> : null}
+            {probe.report ? (
+              <div className="mt-3 text-sm">
+                <p className="text-muted">
+                  Audio inputs visible to the browser: {probe.report.inputs.join(', ') || 'none'}
+                </p>
+                {probe.report.passes.map(pass => (
+                  <div key={pass.label} className="mt-3">
+                    <p className="font-medium text-text">
+                      {pass.label} (requested channels: {pass.requestedChannels})
+                    </p>
+                    <p className="text-muted">
+                      Device: {pass.trackLabel || 'unknown'}.
+                      {' '}Track settings: {pass.settings.channelCount ?? '?'} ch, {pass.settings.sampleRate ?? '?'} Hz,
+                      {' '}echo cancellation {String(pass.settings.echoCancellation ?? '?')},
+                      {' '}noise suppression {String(pass.settings.noiseSuppression ?? '?')},
+                      {' '}auto gain {String(pass.settings.autoGainControl ?? '?')}.
+                    </p>
+                    <p className="text-text">
+                      Delivered to the worklet: <strong>{pass.levels.channels}</strong> channel{pass.levels.channels === 1 ? '' : 's'}
+                    </p>
+                    <ul className="list-disc ml-5">
+                      {pass.levels.rmsDb.map((rms, index) => (
+                        <li key={index}>
+                          Channel {index + 1}: RMS {rms} dBFS, peak {pass.levels.peakDb[index]} dBFS ({describeLevel(rms)})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </Card>
         ) : null}
 

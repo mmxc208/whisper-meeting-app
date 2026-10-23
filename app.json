@@ -1,6 +1,6 @@
 {
   "name": "whisper-meeting",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "displayName": "Whisper Meeting",
   "description": "Durable local meeting transcription for Apple Silicon Macs",
   "author": "KiroCrew contributors",

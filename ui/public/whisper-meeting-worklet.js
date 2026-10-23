@@ -79,3 +79,62 @@ class WhisperMeetingPcmWorklet extends AudioWorkletProcessor {
 }
 
 registerProcessor('whisper-meeting-pcm', WhisperMeetingPcmWorklet)
+
+/**
+ * Diagnostic probe: reports how many channels the browser actually delivers
+ * for an input and the level on each, so a misrouted aggregate device (mic in
+ * channel 1, the call in channels 2-3) is visible before a meeting starts.
+ * It never touches the PCM path above.
+ */
+class WhisperMeetingChannelProbe extends AudioWorkletProcessor {
+  constructor () {
+    super()
+    this._sumSquares = []
+    this._peaks = []
+    this._frames = 0
+    this._reportEvery = Math.max(128, Math.floor(sampleRate / 4))
+    this._stopped = false
+    this.port.onmessage = event => {
+      if (event.data?.type === 'stop') this._stopped = true
+    }
+  }
+
+  process (inputs) {
+    if (this._stopped) return false
+    const channels = inputs[0] ?? []
+    if (!channels.length || !channels[0].length) return true
+    while (this._sumSquares.length < channels.length) {
+      this._sumSquares.push(0)
+      this._peaks.push(0)
+    }
+    for (let channel = 0; channel < channels.length; channel++) {
+      const samples = channels[channel]
+      let sum = this._sumSquares[channel]
+      let peak = this._peaks[channel]
+      for (let index = 0; index < samples.length; index++) {
+        const value = samples[index]
+        sum += value * value
+        const magnitude = value < 0 ? -value : value
+        if (magnitude > peak) peak = magnitude
+      }
+      this._sumSquares[channel] = sum
+      this._peaks[channel] = peak
+    }
+    this._frames += channels[0].length
+    if (this._frames >= this._reportEvery) {
+      this.port.postMessage({
+        type: 'levels',
+        channels: channels.length,
+        frames: this._frames,
+        sumSquares: this._sumSquares.slice(),
+        peaks: this._peaks.slice(),
+      })
+      this._sumSquares = this._sumSquares.map(() => 0)
+      this._peaks = this._peaks.map(() => 0)
+      this._frames = 0
+    }
+    return true
+  }
+}
+
+registerProcessor('whisper-meeting-channel-probe', WhisperMeetingChannelProbe)
