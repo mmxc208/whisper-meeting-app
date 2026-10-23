@@ -25,3 +25,12 @@ def test_sketch_sanitizer_removes_active_and_remote_content() -> None:
     assert "https://bad" not in result
     assert "iframe" not in result
     assert "url(" not in result
+
+
+def test_sketch_export_is_pinned_to_a_light_theme() -> None:
+    result = sanitize_sketch("<p>x</p>")
+
+    assert "color-scheme:light}" in result
+    assert "light dark" not in result
+    assert "background:#fff !important" in result
+    assert ".mermaid svg{width:100%;max-width:none !important" in result

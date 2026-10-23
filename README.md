@@ -33,7 +33,7 @@ discard capture merely because it is slow.
 
 ## MVP status
 
-Version **0.3.4** is a usable, field-tested MVP on the current Apple Silicon
+Version **0.3.5** is a usable, field-tested MVP on the current Apple Silicon
 target. The implemented path includes:
 
 - durable 500 ms PCM capture with an IndexedDB upload queue and idempotent
@@ -167,7 +167,7 @@ Alternatively, create a deterministic source archive:
 
 ```bash
 python scripts/package_local_meeting_app.py \
-  --output dist/whisper-meeting-0.3.4.tar.gz
+  --output dist/whisper-meeting-0.3.5.tar.gz
 ```
 
 Extract the archive and pass its root directory to `kirocrew app install`.

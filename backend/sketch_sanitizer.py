@@ -75,6 +75,17 @@ _ALLOWED_ATTRIBUTES = frozenset(
     }
 )
 _UNSAFE_CSS = re.compile(r"(?:@import|expression\s*\(|url\s*\(|javascript:)", re.IGNORECASE)
+# Keep in step with BASE_CSS in ui/src/sketchSrcdoc.ts: the exported document is
+# always light, because Mermaid's default theme draws dark lines and labels.
+_DEFAULT_STYLES = (
+    "html{color-scheme:light}"
+    "body{font:14px system-ui;margin:16px;background:#fff !important;color:#1f2328 !important}"
+    "table{border-collapse:collapse}td,th{border:1px solid #888;padding:6px}"
+    "pre{white-space:pre-wrap}"
+    ".mermaid{display:flex;justify-content:center;background:#fff;color:#1f2328;"
+    "border:1px solid #d0d7de;border-radius:8px;padding:16px;margin:12px 0;overflow:auto}"
+    ".mermaid svg{width:100%;max-width:none !important;height:auto;max-height:85vh}"
+)
 _CSP = (
     "default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; "
     "font-src 'none'; connect-src 'none'; media-src 'none'; frame-src 'none'; "
@@ -140,8 +151,6 @@ def sanitize_sketch(document: str) -> str:
     return (
         '<!doctype html><html><head><meta charset="utf-8">'
         f'<meta http-equiv="Content-Security-Policy" content="{_CSP}">'
-        "<style>html{color-scheme:light dark}body{font:14px system-ui;margin:16px}"
-        "table{border-collapse:collapse}td,th{border:1px solid #888;padding:6px}"
-        "pre{white-space:pre-wrap}</style></head><body>"
+        f"<style>{_DEFAULT_STYLES}</style></head><body>"
         f"{content}</body></html>"
     )

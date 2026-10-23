@@ -26,7 +26,7 @@ def test_release_archive_is_deterministic_and_installable(tmp_path: Path) -> Non
     manifest = json.loads((app_root / "app.json").read_text(encoding="utf-8"))
     assert manifest["name"] == "whisper-meeting"
     assert manifest["minKiroCrewVersion"] == "0.10.0"
-    assert manifest["version"] == "0.3.4"
+    assert manifest["version"] == "0.3.5"
     assert manifest["permissions"]["api"] == [
         "/apps/whisper-meeting/api",
         "/api/spawn",
